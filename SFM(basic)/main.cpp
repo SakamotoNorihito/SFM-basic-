@@ -15,12 +15,14 @@ const double room_size_y = 10;
 const double width_exit = 1;
 
 //シミュレーション条件
-const int N_sample = 1;             //サンプル数
+const int N_sample = 15;             //サンプル数
 const int N_evacuee = 100;          //初期避難者数
 const double stepTime = 0.005;      //時間幅
 const int N_step = 18200;           //シミュレーションステップ数
 
 int countEscapeCompleteNumber(const int N_initial, vector<Agent>& agents);
+vector<double> calculateAverage(const vector<vector<int>>& data);
+vector<double> calculateStandardDeviation(const vector<vector<int>>& data);
 
 template<class T>
 std::string toString(const T& ct)
@@ -34,6 +36,9 @@ int main()
 {
     clock_t start = clock();
 
+    //int型にキャストすべき？
+    vector<vector<int>> recordEscapeCompleteNumber(N_sample, vector<int>(N_step * stepTime));
+
     for (int N = 0; N < N_sample; ++N) 
     {
         //各サンプル毎にデータを出力
@@ -43,7 +48,7 @@ int main()
         if (!ofs)
         {
             cout << "ファイルが開けませんでした。" << endl;
-            return 0;
+            return 1;
         }
 
         Room room;
@@ -72,7 +77,7 @@ int main()
         ofs << "\n";
 
         vector<Agent> evacuee(N_evacuee);
-        setInitialPosition(evacuee, room);
+        setInitialPosition(evacuee, room);        
 
         for (int n = 0; n < N_step; ++n) 
         {
@@ -88,6 +93,7 @@ int main()
             if (n % (int)(1 / stepTime) == 0) //1秒ごとに避難者の位置を記録する
             {
                 int N_escapeComplete = countEscapeCompleteNumber(N_evacuee, evacuee);
+                recordEscapeCompleteNumber[N][n * stepTime] = N_escapeComplete;
 
                 cout << n * stepTime << "," << N_escapeComplete << ",";
                 ofs << n * stepTime << "," << N_escapeComplete << ",";
@@ -100,12 +106,36 @@ int main()
 
                 cout << "\n";
                 ofs << "\n";
-            }            
+            }
         }
-        
-
         ofs.close();
     }
+
+    //統計処理
+    std::string fname("statistics.csv");
+    std::ofstream ofs(fname);
+
+    if (!ofs)
+    {
+        cout << "ファイルが開けませんでした。" << endl;
+        return 1;
+    }
+
+    vector<double> ave = calculateAverage(recordEscapeCompleteNumber);
+    vector<double> sd = calculateStandardDeviation(recordEscapeCompleteNumber);
+
+    int N_record = ave.size();
+
+    cout << "時間" << "," << "平均避難者数" << "," << "標準偏差" << "\n";
+    ofs << "時間" << "," << "平均避難者数" << "," << "標準偏差" << "\n";
+
+    for (int i = 0; i < N_record; ++i)
+    {
+        cout << i << "," << ave[i] << "," << sd[i] << "\n";
+        ofs << i << "," << ave[i] << "," << sd[i] << "\n";
+    }
+
+    ofs.close();
     
     clock_t end = clock();
     cout << "処理時間：" << (double)(end - start) / CLOCKS_PER_SEC << "sec.\n";
@@ -120,10 +150,51 @@ int countEscapeCompleteNumber(const int N_initialNumber, vector<Agent>& agents)
     return N_initialNumber - N_escapeCurrent;
 }
 
-//C++ thisポインタ【オブジェクト自身を示す隠されたポインタ】
-//https://monozukuri-c.com/langcpp-this-pointer/
+vector<double> calculateAverage(const vector<vector<int>>& data)
+{
+    int N_sample = data.size();
+    int N_record = data.at(0).size();
+    vector<double> average(N_record);
 
-//C++ の基礎 : アクセス制限
-//http://www.s-cradle.com/developer/sophiaframework/tutorial/Cpp/access.html
+    for (int i = 0; i < N_record; ++i)
+    {
+        double temp = 0;
 
-//csvファイル開けないバグを解決する
+        for (int j = 0; j < N_sample; ++j)
+        {
+            temp += data[j][i];            
+        }
+
+        average[i] = temp / N_sample;
+    }
+
+    return average;
+}
+
+vector<double> calculateStandardDeviation(const vector<vector<int>>& data)
+{
+    int N_sample = data.size();
+    int N_record = data.at(0).size();
+    vector<double> sd(N_record);
+
+    vector<double> ave = calculateAverage(data);
+
+    for (int i = 0; i < N_record; ++i)
+    {
+        double temp = 0;
+        double var = 0;
+
+        for (int j = 0; j < N_sample; ++j)
+        {
+            temp += (data[j][i] - ave[i]) * (data[j][i] - ave[i]);            
+        }
+
+        var = temp / N_sample;
+        sd[i] = sqrt(var);
+    }
+
+    return sd;
+
+    //参考
+    //https://daeudaeu.com/c-statistics/
+}
