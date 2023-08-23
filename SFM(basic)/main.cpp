@@ -15,7 +15,7 @@ const double room_size_y = 10;
 const double width_exit = 1;
 
 //シミュレーション条件
-const int N_sample = 15;             //サンプル数
+const int N_sample = 10;             //サンプル数
 const int N_evacuee = 100;          //初期避難者数
 const double stepTime = 0.005;      //時間幅
 const int N_step = 18200;           //シミュレーションステップ数
@@ -111,8 +111,8 @@ int main()
         ofs.close();
     }
 
-    //統計処理
-    std::string fname("statistics.csv");
+    //統計処理用ファイル
+    std::string fname("simulation(basic)_statisticalAnalysis.csv");
     std::ofstream ofs(fname);
 
     if (!ofs)
@@ -124,10 +124,11 @@ int main()
     vector<double> ave = calculateAverage(recordEscapeCompleteNumber);
     vector<double> sd = calculateStandardDeviation(recordEscapeCompleteNumber);
 
-    int N_record = ave.size();
+    int N_sample = recordEscapeCompleteNumber.size();
+    int N_record = recordEscapeCompleteNumber.at(0).size();
 
-    cout << "時間" << "," << "平均避難者数" << "," << "標準偏差" << "\n";
-    ofs << "時間" << "," << "平均避難者数" << "," << "標準偏差" << "\n";
+    cout << "サンプル数" << "," << N_sample << "\n" << "時間" << "," << "平均避難者数" << "," << "標準偏差" << "\n";
+    ofs << "サンプル数" << "," << N_sample << "\n" << "時間" << "," << "平均避難者数" << "," << "標準偏差" << "\n";
 
     for (int i = 0; i < N_record; ++i)
     {
