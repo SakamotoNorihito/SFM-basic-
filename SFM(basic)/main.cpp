@@ -15,7 +15,7 @@ const double room_size_y = 10;
 const double width_exit = 1;
 
 //シミュレーション条件
-const int N_sample = 10;             //サンプル数
+const int N_sample = 3;             //サンプル数
 const int N_evacuee = 100;          //初期避難者数
 const double stepTime = 0.005;      //時間幅
 const int N_step = 18200;           //シミュレーションステップ数
@@ -56,11 +56,11 @@ int main()
         room.setRoom_size_y(room_size_y);
         room.setWidth_exit(width_exit);        
 
-        cout << "部屋のサイズ：x" << "," << "部屋のサイズ：y" << "," << "出口幅：w" << "\n"
-            << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << "\n";
+        cout << "部屋のサイズ：x" << "," << "部屋のサイズ：y" << "," << "出口幅：w" << "," << "避難者総数" << "\n"
+            << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << "," << N_evacuee << "\n";
         
-        ofs << "部屋のサイズ：x" << "," << "部屋のサイズ：y" << "," << "出口幅：w" << "\n"
-            << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << "\n";
+        ofs << "部屋のサイズ：x" << "," << "部屋のサイズ：y" << "," << "出口幅：w" << "," << "避難者総数" << "\n"
+            << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << "," << N_evacuee << "\n";
 
         cout << "時間" << ","
             << "避難完了人数" << ",";
