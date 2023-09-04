@@ -92,7 +92,9 @@ int main()
 
             if (n % (int)(1 / stepTime) == 0) //1秒ごとに避難者の位置を記録する
             {
+                //避難完了者数を数える
                 int N_escapeComplete = countEscapeCompleteNumber(N_evacuee, evacuee);
+                //避難完了者数を記録する（添え字１…サンプル数、添え字２…秒数）
                 recordEscapeCompleteNumber[N][n * stepTime] = N_escapeComplete;
 
                 cout << n * stepTime << "," << N_escapeComplete << ",";
