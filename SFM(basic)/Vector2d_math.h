@@ -10,6 +10,7 @@ public:
 	friend Vector2d operator*(const double& a, const Vector2d& obj);
 	friend Vector2d operator+(const Vector2d& obj1, const Vector2d& obj2);
 	friend Vector2d operator-(const Vector2d& obj1, const Vector2d& obj2);
+	friend Vector2d operator/(const Vector2d& obj, const double& a);
 };
 
 //関数のプロトタイプ宣言

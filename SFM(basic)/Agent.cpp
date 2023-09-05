@@ -3,6 +3,9 @@
 #include"Agent.h"
 using namespace std;
 
+//数学定数
+const double PI = 3.14159;	//円周率
+
 Agent::Agent() 
 {
 	mass = 80;			//エージェントの質量(kg)
@@ -114,23 +117,82 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 		//誘導者の誘導半径外にいるとき
 		else
 		{
+			int N_aroundAgent = 0;
+			Vector2d O, v_total, v_average;
 
+			int N_guide = guide.size();
+			int N_evacuee = evacuee.size();
+
+			//自身の視界範囲内にいる誘導者の数え上げ
+			for (int i = 0; i < N_guide; ++i)
+			{
+				double d_ig = distance(position, guide[i].getPosition());
+
+				if (d_ig != 0 && d_ig < R_vis)
+				{
+					N_aroundAgent++;
+					v_total = v_total + guide[i].getPosition();
+				}
+			}
+
+			//自身の視界範囲内にいる避難者の数え上げ
+			for (int i = 0; i < N_evacuee; ++i)
+			{
+				double d_ij = distance(position, evacuee[i].getPosition());
+
+				if (d_ij != 0 && d_ij < R_vis)
+				{
+					N_aroundAgent++;
+					v_total = v_total + evacuee[i].getPosition();
+				}
+			}
+
+			//自身の視界範囲内に他のエージェントが存在しないとき
+			if (N_aroundAgent == 0)
+			{
+				std::random_device seed_gen;
+				std::default_random_engine engine(seed_gen());
+
+				// 0以上1.0未満の値を等確率で発生させる
+				std::uniform_real_distribution<> dist(0, 1.0);
+
+				double theta = 2 * PI * dist(engine);
+				Vector2d randomDirection = Vector2d(cos(theta), sin(theta));
+
+				desiredDirection = unitVector(O, randomDirection);
+			}
+
+			//自身の視界範囲内に他のエージェントが存在するとき
+			else
+			{
+				//他のエージェントの速度ベクトルの総和 v_total が零ベクトルのとき
+				if (v_total.x == 0 && v_total.y == 0)
+				{
+					std::random_device seed_gen;
+					std::default_random_engine engine(seed_gen());
+
+					// 0以上1.0未満の値を等確率で発生させる
+					std::uniform_real_distribution<> dist(0, 1.0);
+
+					double theta = 2 * PI * dist(engine);
+					Vector2d randomDirection = Vector2d(cos(theta), sin(theta));
+
+					desiredDirection = unitVector(O, randomDirection);
+				}
+
+				//他のエージェントの速度ベクトルの総和 v_total が零ベクトルでないとき
+				else
+				{
+					v_average = v_total / N_aroundAgent;
+					desiredDirection = unitVector(O, v_average);
+				}
+			}
+
+			f_driv = (mass / reactionTime) * ((desiredSpeed * desiredDirection) - velocity);
 		}
-
-
-
-
-
-
-		
-
-
-
 	}
 
-
-
-	return Vector2d();
+	return f_driv;
 }
 
 Vector2d Agent::agentInteractForce(const std::vector<Agent>& agents)

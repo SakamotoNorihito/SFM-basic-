@@ -34,6 +34,12 @@ Vector2d operator-(const Vector2d& obj1, const Vector2d& obj2)
 	return Vector2d(obj1.x - obj2.x, obj1.y - obj2.y);
 }
 
+//Vector / scalar
+Vector2d operator/(const Vector2d& obj, const double& a)
+{
+	return Vector2d(obj.x / a, obj.y / a);
+}
+
 //g(x) = x * Heaviside(x)
 double g(const double& x)
 {
