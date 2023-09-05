@@ -8,6 +8,8 @@ Agent::Agent()
 	mass = 80;			//エージェントの質量(kg)
 	radius = 0.25;		//エージェント半径(m)
 	desiredSpeed = 1;	//希望速さ(m/s)
+	R_ind = 0;			//誘導者の誘導半径(m)
+	R_vis = 0;			//エージェントの視界半径(m)
 
 	position = Vector2d(0, 0);
 	velocity = Vector2d(0, 0);
@@ -49,7 +51,89 @@ Vector2d Agent::drivingForce(const Room roomData)
 	return f_driv;
 }
 
-Vector2d Agent::agentInteractForce(const std::vector<Agent>& agents) 
+//guide用drivingForce
+Vector2d Agent::drivingForce_g(const Room room)
+{
+	const double reactionTime = 0.5;										//反応時間(s)
+	const Vector2d target = Vector2d(room.getRoom_size_x() + radius, 0);	//目的地
+	Vector2d f_driv;
+
+	desiredDirection = unitVector(position, target);
+	f_driv = (mass / reactionTime) * ((desiredSpeed * desiredDirection) - velocity);
+
+	return f_driv;
+}
+
+//evacuee用drivingForce
+Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide, const std::vector<Agent>& evacuee)
+{
+	const double reactionTime = 0.5;										//反応時間(s)
+	const Vector2d target = Vector2d(room.getRoom_size_x() + radius, 0);	//目的地
+	Vector2d f_driv;
+	
+	double d_it = distance(position, target);	//自身と目的地までの距離
+
+	//目的地が視界に入っているとき
+	if (d_it < R_vis)
+	{
+		desiredDirection = unitVector(position, target);
+		f_driv = (mass / reactionTime) * ((desiredSpeed * desiredDirection) - velocity);
+	}
+
+	//目的地が視界に入っていないとき
+	else
+	{
+		int N_guide = guide.size();
+		vector<double> d_ig(N_guide);
+
+		//避難者と各誘導者の距離を計算
+		for (int i = 0; i < N_guide; ++i)
+		{
+			d_ig[i] = distance(position, guide[i].getPosition());
+		}
+
+		//最も近い誘導者までの距離と誘導者番号を取得（参考：https://zenn.dev/reputeless/books/standard-cpp-for-competitive-programming/viewer/library-algorithm#1.5-%E9%85%8D%E5%88%97%E3%81%AE%E4%B8%AD%E3%81%8B%E3%82%89%E6%9C%80%E5%B0%8F%E3%81%AE%E8%A6%81%E7%B4%A0%E3%81%A8%E3%81%9D%E3%81%AE%E4%BD%8D%E7%BD%AE%E3%82%92%E5%BE%97%E3%82%8B）
+		auto it = min_element(d_ig.begin(), d_ig.end());
+		double d_ig_min = *it;									//誘導者までの距離
+		int nearestGuideNumber = distance(d_ig.begin(), it);	//誘導者番号
+		double R_ind = guide[nearestGuideNumber].getR_ind();	//誘導者の誘導半径
+
+		//誘導者の誘導半径内にいるとき
+		if (d_ig_min < R_ind)
+		{
+			double rho = exp(-d_ig_min / (2 * R_ind));
+			Vector2d O, e_i;
+			Vector2d e_g = unitVector(guide[nearestGuideNumber].getPosition(), target);
+			Vector2d n_ig = unitVector(guide[nearestGuideNumber].getPosition(), position);
+
+			e_i = rho * e_g - (1 - rho) * n_ig;
+			desiredDirection = unitVector(O, e_i);
+			f_driv = (mass / reactionTime) * ((desiredSpeed * desiredDirection) - velocity);
+		}
+
+		//誘導者の誘導半径外にいるとき
+		else
+		{
+
+		}
+
+
+
+
+
+
+		
+
+
+
+	}
+
+
+
+	return Vector2d();
+}
+
+Vector2d Agent::agentInteractForce(const std::vector<Agent>& agents)
 {
 	const double A = 2000;					//心理的反発力(N)
 	const double B = 0.08;					//心理的反発距離(m)
