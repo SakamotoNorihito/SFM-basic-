@@ -119,6 +119,8 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 		{
 			int N_aroundAgent = 0;
 			Vector2d O, v_total, v_average;
+			
+			const double lambda = 1;	//視界異方性の強さを表すパラメータ
 
 			int N_guide = guide.size();
 			int N_evacuee = evacuee.size();
@@ -131,7 +133,13 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 				if (d_ig != 0 && d_ig < R_vis)
 				{
 					N_aroundAgent++;
-					v_total = v_total + guide[i].getPosition();
+
+					//視界異方性係数の計算
+					Vector2d n_gi = unitVector(position, guide[i].getPosition());	//i→g方向の単位ベクトル
+					double cos_phi = dotProduct(desiredDirection, n_gi);
+					double anisotropy_coef = lambda + (1 - lambda) * ((1 + cos_phi) / 2);
+
+					v_total = v_total + anisotropy_coef * guide[i].getVelocity();
 				}
 			}
 
@@ -143,7 +151,13 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 				if (d_ij != 0 && d_ij < R_vis)
 				{
 					N_aroundAgent++;
-					v_total = v_total + evacuee[i].getPosition();
+
+					//視界異方性係数の計算
+					Vector2d n_ji = unitVector(position, evacuee[i].getPosition());	//i→j方向の単位ベクトル
+					double cos_phi = dotProduct(desiredDirection, n_ji);
+					double anisotropy_coef = lambda + (1 - lambda) * ((1 + cos_phi) / 2);
+
+					v_total = v_total + anisotropy_coef * evacuee[i].getVelocity();
 				}
 			}
 
