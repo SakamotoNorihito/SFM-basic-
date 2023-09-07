@@ -19,9 +19,29 @@ Agent::Agent()
 	desiredDirection = Vector2d(0, 0);
 }
 
-void Agent::setRadius(const double r) 
+void Agent::setMass(const double m)
+{
+	this->mass = m;
+}
+
+void Agent::setRadius(const double r)
 {
 	this->radius = r;
+}
+
+void Agent::setDesiredSpeed(const double v_des)
+{
+	this->desiredSpeed = v_des;
+}
+
+void Agent::setR_ind(const double R_induction)
+{
+	this->R_ind = R_induction;
+}
+
+void Agent::setR_vis(const double R_visibility)
+{
+	this->R_vis = R_visibility;
 }
 
 void Agent::setPosition(const Vector2d p) 

@@ -34,8 +34,8 @@ public:
 	void setMass(const double m);
 	void setRadius(const double r);
 	void setDesiredSpeed(const double v_des);
-	void setR_ind(const double R_ind);
-	void setR_vis(const double R_vis);
+	void setR_ind(const double R_induction);
+	void setR_vis(const double R_visibility);
 	void setPosition(const Vector2d p);
 	void setVelocity(const Vector2d v);
 	void setDesiredDirection(const Vector2d e);
