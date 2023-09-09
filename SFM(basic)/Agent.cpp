@@ -137,10 +137,10 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 		//誘導者の誘導半径外にいるとき
 		else
 		{
+			const double lambda = 1;	//視界異方性の強さを表すパラメータ
+
 			int N_aroundAgent = 0;
 			Vector2d O, v_total, v_average;
-			
-			const double lambda = 1;	//視界異方性の強さを表すパラメータ
 
 			int N_guide = guide.size();
 			int N_evacuee = evacuee.size();
@@ -360,6 +360,110 @@ void setInitialPosition(vector<Agent>& agents, const Room roomData)
 		} while (1);
 
 	} while (i < N_agent);
+}
+
+void setInitialPosition_g(const Room room, std::vector<Agent>& guide)
+{
+	const double room_size_x = room.getRoom_size_x();
+	const double room_size_y = room.getRoom_size_y();
+	const int N_guide = guide.size();
+
+	for (int i = 0; i < N_guide; ++i)
+	{
+		switch (i)	//誘導者毎初期配置を指定する
+		{
+		case 0:
+			guide[i].setPosition(Vector2d(guide[i].getRadius(), 0));	//部屋の左壁中央
+			break;
+
+		case 1:
+			break;
+		}
+	}
+}
+
+void setInitialPosition_e(const Room room, const std::vector<Agent>& guide, std::vector<Agent>& evacuee)
+{
+	std::random_device seed_gen;
+	std::default_random_engine engine(seed_gen());
+
+	const double room_size_x = room.getRoom_size_x();
+	const double room_size_y = room.getRoom_size_y();
+	const int N_guide = guide.size();
+	const int N_evacuee = evacuee.size();	
+
+	int i = 0;
+	vector<bool> isOverlap(N_guide);	//避難者と各誘導者毎の座標被りの判定結果を格納する配列
+	bool judge = false;					//全ての誘導者との座標被りの判定結果を格納する変数
+
+	do
+	{
+		double r_i = evacuee[i].getRadius();
+		// r_i 以上 room_size_x - r_i 未満の実数を一様乱数で発生させる
+		std::uniform_real_distribution<> dist_x(r_i, room_size_x - r_i);
+		// (-room_size_y / 2) + r_i 以上 (room_size_y / 2) - r_i 未満の実数を一様乱数で発生させる
+		std::uniform_real_distribution<> dist_y((-room_size_y / 2) + r_i, (room_size_y / 2) - r_i);
+		evacuee[i].setPosition(Vector2d(dist_x(engine), dist_y(engine)));
+
+		//避難者と誘導者の座標被りの判定
+		for (int g = 0; g < N_guide; ++g)
+		{
+			double r_g = guide[g].getRadius();
+			double r_ig = r_i + r_g;
+			double d_ig = distance(evacuee[i].getPosition(), guide[g].getPosition());
+
+			//避難者と誘導者の体が重なっている場合
+			if (d_ig < r_ig)
+			{
+				isOverlap[g] = true;
+			}
+
+			//避難者と誘導者の体が重なっていない場合
+			else
+			{
+				isOverlap[g] = false;
+			}
+		}
+
+		//全ての誘導者と座標被りを起こしていないか判定
+		judge = all_of(isOverlap.begin(), isOverlap.end(), [](bool t) { return t == false; });
+
+		//全ての誘導者と座標被りを起こしていないとき
+		if (judge)
+		{
+			int j = 0;
+
+			//避難者間で座標被りを起こさないための処理
+			do
+			{
+				if (i == j)
+				{
+					i++;
+					break;
+				}
+
+				else
+				{
+					double r_j = evacuee[j].getRadius();
+					double r_ij = r_i + r_j;
+					double d_ij = distance(evacuee[i].getPosition(), evacuee[j].getPosition());
+
+					//避難者同士で体が重なっている場合
+					if (d_ij < r_ij)
+					{
+						break;
+					}
+
+					//避難者同士で体が重なっていない場合
+					else
+					{
+						j++;
+					}
+				}
+
+			} while (1);
+		}
+	} while (i < N_evacuee);
 }
 
 void removeAgent(std::vector<Agent>& agents, Room roomData) 

@@ -49,17 +49,15 @@ public:
 	Vector2d getVelocity() const { return velocity; }
 	Vector2d getDesiredDirection() const { return desiredDirection; }	
 	
-	void move(std::vector<Agent>& agents, Room roomData, const double stepTime);
-
-	
+	void move(std::vector<Agent>& agents, Room roomData, const double stepTime);	
 };
 
 void setInitialPosition(std::vector<Agent>& agents, Room roomData);
 
 //guide用初期配置関数
-void setInitialPosition_g(std::vector<Agent>& guide);
+void setInitialPosition_g(const Room room, std::vector<Agent>& guide);
 //evacuee用初期配置関数
-void setInitialPosition_e(const std::vector<Agent>& guide, std::vector<Agent>& evacuee, const Room room);
+void setInitialPosition_e(const Room room, const std::vector<Agent>& guide, std::vector<Agent>& evacuee);
 
 
 void removeAgent(std::vector<Agent>& agents, Room roomData);
