@@ -62,18 +62,6 @@ void Agent::setDesiredDirection(const Vector2d e)
 	this->desiredDirection.y = e.y;
 }
 
-Vector2d Agent::drivingForce(const Room roomData) 
-{
-	const double reactionTime = 0.5;											//反応時間(s)
-	const Vector2d target = Vector2d(roomData.getRoom_size_x() + radius, 0);	//目的地
-	Vector2d f_driv;
-
-	desiredDirection = unitVector(position, target);
-	f_driv = (mass / reactionTime) * ((desiredSpeed * desiredDirection) - velocity);
-
-	return f_driv;
-}
-
 //guide用drivingForce
 Vector2d Agent::drivingForce_g(const Room room)
 {
@@ -248,7 +236,8 @@ Vector2d Agent::agentInteractForce(const std::vector<Agent>& agents)
 	{
 		d_ij = distance(position, agents[j].getPosition());
 
-		if (d_ij != 0) //自分自身を除外
+		//自分自身を除外　かつ　エージェントが視界範囲内にいるとき
+		if (d_ij != 0 && d_ij < R_vis)
 		{
 			r_j = agents[j].getRadius();
 			r_ij = r_i + r_j;
@@ -261,7 +250,7 @@ Vector2d Agent::agentInteractForce(const std::vector<Agent>& agents)
 			f_fric = kappa * g(r_ij - d_ij) * v_ji * t_ij;
 
 			f_ij = f_ij + f_soc + f_rep + f_fric;
-		}
+		}		
 	}
 
 	return f_ij;
@@ -285,24 +274,41 @@ Vector2d Agent::wallInteractForce(Room room)
 	{
 		nearestPoint = getNearestPoint(wallCornerPoint[n][0], wallCornerPoint[n][1], position);
 		d_iw = distance(position, nearestPoint);
-		n_iw = unitVector(nearestPoint, position);		//w→i方向の単位ベクトル
-		t_iw = tangentialVector(n_iw);
 
-		f_soc = A * exp((r_i - d_iw) / B) * n_iw;
-		f_rep = k * g(r_i - d_iw) * n_iw;
-		f_fric = kappa * g(r_i - d_iw) * dotProduct(velocity, t_iw) * t_iw;
+		//壁が自身の視界範囲内にあるとき
+		if (d_iw < R_vis)
+		{
+			n_iw = unitVector(nearestPoint, position);	//w→i方向の単位ベクトル
+			t_iw = tangentialVector(n_iw);
 
-		f_iw = f_iw + f_soc + f_rep - f_fric;
+			f_soc = A * exp((r_i - d_iw) / B) * n_iw;
+			f_rep = k * g(r_i - d_iw) * n_iw;
+			f_fric = kappa * g(r_i - d_iw) * dotProduct(velocity, t_iw) * t_iw;
+
+			f_iw = f_iw + f_soc + f_rep - f_fric;
+		}		
 	}
 
 	return f_iw;
 }
 
-void Agent::move(vector<Agent>& agents, Room roomData, const double stepTime) 
+//guide用move関数
+void Agent::move_g(std::vector<Agent>& guide, const std::vector<Agent>& evacuee, const Room room, const double stepTime)
 {
 	Vector2d acceleration;
 
-	acceleration = drivingForce(roomData) + agentInteractForce(agents) + wallInteractForce(roomData);
+	acceleration = drivingForce_g(room) + agentInteractForce(guide) + agentInteractForce(evacuee) + wallInteractForce(room);
+
+	velocity = velocity + stepTime * acceleration;
+	position = position + stepTime * velocity;
+}
+
+//evacuee用move関数
+void Agent::move_e(std::vector<Agent>& evacuee, const std::vector<Agent>& guide, const Room room, const double stepTime)
+{
+	Vector2d acceleration;
+
+	acceleration = drivingForce_e(room, guide, evacuee) + agentInteractForce(guide) + agentInteractForce(evacuee) + wallInteractForce(room);
 
 	velocity = velocity + stepTime * acceleration;
 	position = position + stepTime * velocity;

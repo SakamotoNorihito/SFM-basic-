@@ -18,13 +18,10 @@ private:
 	Vector2d velocity;
 	Vector2d desiredDirection;
 
-	Vector2d drivingForce(const Room roomData);
-
 	//guide用drivingForce
 	Vector2d drivingForce_g(const Room room);
 	//evacuee用drivingForce
 	Vector2d drivingForce_e(const Room room, const std::vector<Agent>& guide, const std::vector<Agent>& evacuee);
-
 	Vector2d agentInteractForce(const std::vector<Agent>& agents);
 	Vector2d wallInteractForce(Room roomData);
 
@@ -49,7 +46,10 @@ public:
 	Vector2d getVelocity() const { return velocity; }
 	Vector2d getDesiredDirection() const { return desiredDirection; }	
 	
-	void move(std::vector<Agent>& agents, Room roomData, const double stepTime);	
+	//guide用move関数
+	void move_g(std::vector<Agent>& guide, const std::vector<Agent>& evacuee, const Room room, const double stepTime);
+	//evacuee用move関数
+	void move_e(std::vector<Agent>& evacuee, const std::vector<Agent>& guide, const Room room, const double stepTime);
 };
 
 void setInitialPosition(std::vector<Agent>& agents, Room roomData);
@@ -58,7 +58,6 @@ void setInitialPosition(std::vector<Agent>& agents, Room roomData);
 void setInitialPosition_g(const Room room, std::vector<Agent>& guide);
 //evacuee用初期配置関数
 void setInitialPosition_e(const Room room, const std::vector<Agent>& guide, std::vector<Agent>& evacuee);
-
 
 void removeAgent(std::vector<Agent>& agents, Room roomData);
 
