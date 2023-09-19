@@ -16,6 +16,7 @@ const double width_exit = 1;
 
 //シミュレーション条件
 const int N_sample = 3;             //サンプル数
+const int N_guide = 1;              //初期誘導者数
 const int N_evacuee = 100;          //初期避難者数
 const double stepTime = 0.005;      //時間幅
 const int N_step = 18200;           //シミュレーションステップ数
@@ -54,19 +55,38 @@ int main()
         Room room;
         room.setRoom_size_x(room_size_x);
         room.setRoom_size_y(room_size_y);
-        room.setWidth_exit(width_exit);        
+        room.setWidth_exit(width_exit);
 
-        cout << "部屋のサイズ：x" << "," << "部屋のサイズ：y" << "," << "出口幅：w" << "," << "避難者総数" << "\n"
-            << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << "," << N_evacuee << "\n";
-        
-        ofs << "部屋のサイズ：x" << "," << "部屋のサイズ：y" << "," << "出口幅：w" << "," << "避難者総数" << "\n"
-            << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << "," << N_evacuee << "\n";
+        vector<Agent> guide(N_guide);
+        vector<Agent> evacuee(N_evacuee);
 
-        cout << "時間" << ","
-            << "避難完了人数" << ",";
+        double R_ind = guide[0].getR_ind();
+        double R_vis = evacuee[0].getR_vis();
+        double radius = evacuee[0].getRadius();
 
-        ofs << "時間" << ","
-            << "避難完了人数" << ",";
+        cout << "部屋のサイズ：x" << "," << "部屋のサイズ：y" << "," << "出口幅：w" << ","
+            << "エージェント半径" << "," << "誘導半径" << "," << "視界半径" << ","
+            << "誘導者数" << "," << "避難者数" << "\n"
+            << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << ","
+            << radius << "," << R_ind << "," << R_vis << ","
+            << N_guide << "," << N_evacuee << "\n";
+
+        ofs << "部屋のサイズ：x" << "," << "部屋のサイズ：y" << "," << "出口幅：w" << ","
+            << "エージェント半径" << "," << "誘導半径" << "," << "視界半径" << ","
+            << "誘導者数" << "," << "避難者数" << "\n"
+            << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << ","
+            << radius << "," << R_ind << "," << R_vis << ","
+            << N_guide << "," << N_evacuee << "\n";
+
+        cout << "時間" << "," << "避難完了人数" << ",";
+
+        ofs << "時間" << "," << "避難完了人数" << ",";
+
+        for (int i = 0; i < N_guide; ++i)
+        {
+            cout << "誘導者" << i + 1 << "のx座標" << "," << "誘導者" << i + 1 << "のy座標" << ",";
+            ofs << "誘導者" << i + 1 << "のx座標" << "," << "誘導者" << i + 1 << "のy座標" << ",";
+        }
 
         for (int i = 0; i < N_evacuee; ++i)
         {           
@@ -76,29 +96,66 @@ int main()
         cout << "\n";
         ofs << "\n";
 
-        vector<Agent> evacuee(N_evacuee);
-        setInitialPosition(evacuee, room);        
+        setInitialPosition_g(room, guide);
+        setInitialPosition_e(room, guide, evacuee);
 
         for (int n = 0; n < N_step; ++n) 
         {
+            removeAgent(guide, room);
             removeAgent(evacuee, room);
 
-            int N_escapeCurrent = evacuee.size();
-                        
-            for (int i = 0; i < N_escapeCurrent; ++i) 
+            int N_escapeCurrentGuide = guide.size();
+            int N_escapeCurrentEvacuee = evacuee.size();
+
+            for (int i = 0; i < N_escapeCurrentGuide; ++i)
             {
-                evacuee[i].move(evacuee, room, stepTime);
-            }                
+                guide[i].move_g(guide, evacuee, room, stepTime);
+            }
+
+            for (int i = 0; i < N_escapeCurrentEvacuee; ++i)
+            {
+                evacuee[i].move_e(evacuee, guide, room, stepTime);
+            }
 
             if (n % (int)(1 / stepTime) == 0) //1秒ごとに避難者の位置を記録する
             {
-                int N_escapeComplete = countEscapeCompleteNumber(N_evacuee, evacuee);
-                recordEscapeCompleteNumber[N][n * stepTime] = N_escapeComplete;
+                //避難完了者数の数え上げ
+                int N_escapeCompleteEvacuee = countEscapeCompleteNumber(N_evacuee, evacuee);
+                //避難完了者数の記録（添え字１…サンプル数、添え字２…秒数）
+                recordEscapeCompleteNumber[N][n * stepTime] = N_escapeCompleteEvacuee;
 
-                cout << n * stepTime << "," << N_escapeComplete << ",";
-                ofs << n * stepTime << "," << N_escapeComplete << ",";
+                cout << n * stepTime << "," << N_escapeCompleteEvacuee << ",";
+                ofs << n * stepTime << "," << N_escapeCompleteEvacuee << ",";
 
-                for (int i = 0; i < N_escapeCurrent; ++i) 
+                //現在避難している誘導者数と初期誘導者数が一致しているとき
+                if (N_escapeCurrentGuide == N_guide)
+                {
+                    for (int i = 0; i < N_escapeCurrentGuide; ++i)
+                    {
+                        cout << guide[i].getPosition().x << "," << guide[i].getPosition().y << ",";
+                        ofs << guide[i].getPosition().x << "," << guide[i].getPosition().y << ",";
+                    }
+                }
+                
+                //避難を完了した誘導者が出てきたとき
+                else
+                {
+                    int N_escapeCompleteGuide = countEscapeCompleteNumber(N_guide, guide);
+
+                    for (int i = 0; i < N_escapeCurrentGuide; ++i)
+                    {
+                        cout << guide[i].getPosition().x << "," << guide[i].getPosition().y << ",";
+                        ofs << guide[i].getPosition().x << "," << guide[i].getPosition().y << ",";
+                    }
+
+                    for (int i = 0; i < N_escapeCompleteGuide; ++i)
+                    {
+                        cout << "" << "," << "" << ",";
+                        ofs << "" << "," << "" << ",";
+                    }
+                }                
+
+                for (int i = 0; i < N_escapeCurrentEvacuee; ++i)
                 {
                     cout << evacuee[i].getPosition().x << "," << evacuee[i].getPosition().y << ",";
                     ofs << evacuee[i].getPosition().x << "," << evacuee[i].getPosition().y << ",";
@@ -195,7 +252,4 @@ vector<double> calculateStandardDeviation(const vector<vector<int>>& data)
     }
 
     return sd;
-
-    //参考
-    //https://daeudaeu.com/c-statistics/
 }
