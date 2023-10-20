@@ -11,8 +11,8 @@ Agent::Agent()
 	mass = 80;			//エージェントの質量(kg)
 	radius = 0.25;		//エージェント半径(m)
 	desiredSpeed = 1;	//希望速さ(m/s)
-	R_ind = 5;			//誘導者の誘導半径(m)
-	R_vis = 1;			//エージェントの視界半径(m)
+	R_ind = 1;			//誘導者の誘導半径(m)
+	R_vis = 3;			//エージェントの視界半径(m)
 
 	position = Vector2d(0, 0);
 	velocity = Vector2d(0, 0);
@@ -445,6 +445,17 @@ void setInitialPosition_g(const Room room, std::vector<Agent>& guide)
 	const double room_size_x = room.getRoom_size_x();
 	const double room_size_y = room.getRoom_size_y();
 	const int N_guide = guide.size();
+
+	//誘導者の初期位置の候補
+	const Vector2d p1 = Vector2d(room_size_x / 4, room_size_y / 4);
+	const Vector2d p2 = Vector2d(room_size_x / 4, 0);
+	const Vector2d p3 = Vector2d(room_size_x / 4, -room_size_y / 4);
+	const Vector2d p4 = Vector2d(room_size_x / 2, room_size_y / 4);
+	const Vector2d p5 = Vector2d(room_size_x / 2, 0);
+	const Vector2d p6 = Vector2d(room_size_x / 2, -room_size_y / 4);
+	const Vector2d p7 = Vector2d(room_size_x * (3 / 4), room_size_y / 4);
+	const Vector2d p8 = Vector2d(room_size_x * (3 / 4), 0);
+	const Vector2d p9 = Vector2d(room_size_x * (3 / 4), -room_size_y / 4);
 
 	for (int i = 0; i < N_guide; ++i)
 	{
