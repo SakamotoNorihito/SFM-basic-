@@ -20,9 +20,9 @@ desiredSpeed = 1;	  //希望速さ(m/s)
 
 ```
 //部屋の形状
-const double room_size_x = 10;
-const double room_size_y = 10;
-const double width_exit = 1;
+const double room_size_x = 10;  //部屋のx（横）方向のサイズ(m)
+const double room_size_y = 10;  //部屋のy（縦）方向のサイズ(m)
+const double width_exit = 1;    //出口幅のサイズ(m)
 
 //シミュレーション条件
 const int N_sample = 10;             //サンプル数
