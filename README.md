@@ -36,7 +36,7 @@ const int N_step = 18200;           //シミュレーションステップ数
 
 **①simulation(basic)#.csv**  
 冒頭２行には各種シミュレーション条件が、３行以降は1秒毎の避難完了人数と各避難者の位置座標が書き込まれたCSVデータが出力されます。#にはサンプル番号が入ります。
-避難の様子を描画する際には、[evacuation-drawingリポジトリ内のmainブランチにある避難_描画プログラム.py](https://github.com/SakamotoNorihito/evacuation-drawing.git)を利用してください。
+避難の様子を描画する際には、evacuation-drawingリポジトリ内のmainブランチにある[避難_描画プログラム.py](https://github.com/SakamotoNorihito/evacuation-drawing.git)を利用してください。
 
 **②simulation(basic)_statisticalAnalysis.csv**  
 ①で出力されたCSVデータの避難完了人数について、各時刻ごとの平均及び標準偏差を格納したCSVデータが出力されます。
