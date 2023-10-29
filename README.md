@@ -3,7 +3,9 @@
 
 # 動作環境
 OS:Microsoft Windows 11
+
 実行環境:VisualStudio2022
+
 C++のバージョン:C++20
 
 # 使用方法
