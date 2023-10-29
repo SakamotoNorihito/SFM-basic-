@@ -40,3 +40,6 @@ const int N_step = 18200;           //シミュレーションステップ数
 
 **②simulation(basic)_statisticalAnalysis.csv**  
 ①で出力されたCSVデータの避難完了人数について、各時刻ごとの平均及び標準偏差を格納したCSVデータが出力されます。
+
+# 作成者
+坂本矩仁
