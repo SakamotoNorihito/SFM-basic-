@@ -15,11 +15,12 @@ const double room_size_y = 10;
 const double width_exit = 1;
 
 //シミュレーション条件
-const int N_sample = 100;             //サンプル数
+const int N_sample = 1;             //サンプル数
 const int N_guide = 1;              //初期誘導者数
-const int N_evacuee = 25;          //初期避難者数
+const int N_evacuee = 100;          //初期避難者数
 const double stepTime = 0.005;      //時間幅
-const int N_step = 18200;           //シミュレーションステップ数
+const int N_step = 27200;           //シミュレーションステップ数
+//避難時間 = 時間幅 × シミュレーションステップ数
 
 int countEscapeCompleteNumber(const int N_initial, vector<Agent>& agents);
 vector<double> calculateAverage(const vector<vector<int>>& data);
@@ -79,19 +80,40 @@ int main()
             << N_guide << "," << N_evacuee << "\n";
 
         cout << "時間" << "," << "避難完了人数" << ",";
-
         ofs << "時間" << "," << "避難完了人数" << ",";
 
         for (int i = 0; i < N_guide; ++i)
         {
-            cout << "誘導者" << i + 1 << "のx座標" << "," << "誘導者" << i + 1 << "のy座標" << ",";
-            ofs << "誘導者" << i + 1 << "のx座標" << "," << "誘導者" << i + 1 << "のy座標" << ",";
+            cout << "誘導者" << i + 1 << "のx座標" << "," << "誘導者" << i + 1 << "のy座標" << ","
+                << "誘導者" << i + 1 << "のv_x" << "," << "誘導者" << i + 1 << "のv_y" << ","
+                << "誘導者" << i + 1 << "のf_driv_x" << "," << "誘導者" << i + 1 << "のf_driv_y" << ","
+                << "誘導者" << i + 1 << "のf_ig_x" << "," << "誘導者" << i + 1 << "のf_ig_y" << ","
+                << "誘導者" << i + 1 << "のf_ij_x" << "," << "誘導者" << i + 1 << "のf_ij_y" << ","
+                << "誘導者" << i + 1 << "のf_iw_x" << "," << "誘導者" << i + 1 << "のf_iw_y" << ",";
+
+            ofs << "誘導者" << i + 1 << "のx座標" << "," << "誘導者" << i + 1 << "のy座標" << ","
+                << "誘導者" << i + 1 << "のv_x" << "," << "誘導者" << i + 1 << "のv_y" << ","
+                << "誘導者" << i + 1 << "のf_driv_x" << "," << "誘導者" << i + 1 << "のf_driv_y" << ","
+                << "誘導者" << i + 1 << "のf_ig_x" << "," << "誘導者" << i + 1 << "のf_ig_y" << ","
+                << "誘導者" << i + 1 << "のf_ij_x" << "," << "誘導者" << i + 1 << "のf_ij_y" << ","
+                << "誘導者" << i + 1 << "のf_iw_x" << "," << "誘導者" << i + 1 << "のf_iw_y" << ",";
         }
 
         for (int i = 0; i < N_evacuee; ++i)
         {           
-            cout << "避難者" << i + 1 << "のx座標" << "," << "避難者" << i + 1 << "のy座標" << ",";
-            ofs << "避難者" << i + 1 << "のx座標" << "," << "避難者" << i + 1 << "のy座標" << ",";
+            cout << "避難者" << i + 1 << "のx座標" << "," << "避難者" << i + 1 << "のy座標" << ","
+                << "避難者" << i + 1 << "のv_x" << "," << "避難者" << i + 1 << "のv_y" << ","
+                << "避難者" << i + 1 << "のf_driv_x" << "," << "避難者" << i + 1 << "のf_driv_y" << ","
+                << "避難者" << i + 1 << "のf_ig_x" << "," << "避難者" << i + 1 << "のf_ig_y" << ","
+                << "避難者" << i + 1 << "のf_ij_x" << "," << "避難者" << i + 1 << "のf_ij_y" << ","
+                << "避難者" << i + 1 << "のf_iw_x" << "," << "避難者" << i + 1 << "のf_iw_y" << ",";
+
+            ofs << "避難者" << i + 1 << "のx座標" << "," << "避難者" << i + 1 << "のy座標" << ","
+                << "避難者" << i + 1 << "のv_x" << "," << "避難者" << i + 1 << "のv_y" << ","
+                << "避難者" << i + 1 << "のf_driv_x" << "," << "避難者" << i + 1 << "のf_driv_y" << ","
+                << "避難者" << i + 1 << "のf_ig_x" << "," << "避難者" << i + 1 << "のf_ig_y" << ","
+                << "避難者" << i + 1 << "のf_ij_x" << "," << "避難者" << i + 1 << "のf_ij_y" << ","
+                << "避難者" << i + 1 << "のf_iw_x" << "," << "避難者" << i + 1 << "のf_iw_y" << ",";
         }       
         cout << "\n";
         ofs << "\n";
@@ -132,8 +154,19 @@ int main()
                 {
                     for (int i = 0; i < N_escapeCurrentGuide; ++i)
                     {
-                        cout << guide[i].getPosition().x << "," << guide[i].getPosition().y << ",";
-                        ofs << guide[i].getPosition().x << "," << guide[i].getPosition().y << ",";
+                        cout << guide[i].getPosition().x << "," << guide[i].getPosition().y << ","
+                            << guide[i].getVelocity().x << "," << guide[i].getVelocity().y << ","
+                            << guide[i].getF_driv().x << "," << guide[i].getF_driv().y << ","
+                            << guide[i].getF_ig().x << "," << guide[i].getF_ig().y << ","
+                            << guide[i].getF_ij().x << "," << guide[i].getF_ij().y << ","
+                            << guide[i].getF_iw().x << "," << guide[i].getF_iw().y << ",";
+
+                        ofs << guide[i].getPosition().x << "," << guide[i].getPosition().y << ","
+                            << guide[i].getVelocity().x << "," << guide[i].getVelocity().y << ","
+                            << guide[i].getF_driv().x << "," << guide[i].getF_driv().y << ","
+                            << guide[i].getF_ig().x << "," << guide[i].getF_ig().y << ","
+                            << guide[i].getF_ij().x << "," << guide[i].getF_ij().y << ","
+                            << guide[i].getF_iw().x << "," << guide[i].getF_iw().y << ",";
                     }
                 }
                 
@@ -144,21 +177,54 @@ int main()
 
                     for (int i = 0; i < N_escapeCurrentGuide; ++i)
                     {
-                        cout << guide[i].getPosition().x << "," << guide[i].getPosition().y << ",";
-                        ofs << guide[i].getPosition().x << "," << guide[i].getPosition().y << ",";
+                        cout << guide[i].getPosition().x << "," << guide[i].getPosition().y << ","
+                            << guide[i].getVelocity().x << "," << guide[i].getVelocity().y << ","
+                            << guide[i].getF_driv().x << "," << guide[i].getF_driv().y << ","
+                            << guide[i].getF_ig().x << "," << guide[i].getF_ig().y << ","
+                            << guide[i].getF_ij().x << "," << guide[i].getF_ij().y << ","
+                            << guide[i].getF_iw().x << "," << guide[i].getF_iw().y << ",";
+
+                        ofs << guide[i].getPosition().x << "," << guide[i].getPosition().y << ","
+                            << guide[i].getVelocity().x << "," << guide[i].getVelocity().y << ","
+                            << guide[i].getF_driv().x << "," << guide[i].getF_driv().y << ","
+                            << guide[i].getF_ig().x << "," << guide[i].getF_ig().y << ","
+                            << guide[i].getF_ij().x << "," << guide[i].getF_ij().y << ","
+                            << guide[i].getF_iw().x << "," << guide[i].getF_iw().y << ",";
                     }
 
                     for (int i = 0; i < N_escapeCompleteGuide; ++i)
                     {
-                        cout << "" << "," << "" << ",";
-                        ofs << "" << "," << "" << ",";
+                        cout << "" << "," << "" << ","
+                            << "" << "," << "" << ","
+                            << "" << "," << "" << ","
+                            << "" << "," << "" << ","
+                            << "" << "," << "" << ","
+                            << "" << "," << "" << ",";
+
+                        ofs << "" << "," << "" << ","
+                            << "" << "," << "" << ","
+                            << "" << "," << "" << ","
+                            << "" << "," << "" << ","
+                            << "" << "," << "" << ","
+                            << "" << "," << "" << ",";
                     }
                 }                
 
                 for (int i = 0; i < N_escapeCurrentEvacuee; ++i)
                 {
-                    cout << evacuee[i].getPosition().x << "," << evacuee[i].getPosition().y << ",";
-                    ofs << evacuee[i].getPosition().x << "," << evacuee[i].getPosition().y << ",";
+                    cout << evacuee[i].getPosition().x << "," << evacuee[i].getPosition().y << ","
+                        << evacuee[i].getVelocity().x << "," << evacuee[i].getVelocity().y << ","
+                        << evacuee[i].getF_driv().x << "," << evacuee[i].getF_driv().y << ","
+                        << evacuee[i].getF_ig().x << "," << evacuee[i].getF_ig().y << ","
+                        << evacuee[i].getF_ij().x << "," << evacuee[i].getF_ij().y << ","
+                        << evacuee[i].getF_iw().x << "," << evacuee[i].getF_iw().y << ",";
+
+                    ofs << evacuee[i].getPosition().x << "," << evacuee[i].getPosition().y << ","
+                        << evacuee[i].getVelocity().x << "," << evacuee[i].getVelocity().y << ","
+                        << evacuee[i].getF_driv().x << "," << evacuee[i].getF_driv().y << ","
+                        << evacuee[i].getF_ig().x << "," << evacuee[i].getF_ig().y << ","
+                        << evacuee[i].getF_ij().x << "," << evacuee[i].getF_ij().y << ","
+                        << evacuee[i].getF_iw().x << "," << evacuee[i].getF_iw().y << ",";
                 }
 
                 cout << "\n";

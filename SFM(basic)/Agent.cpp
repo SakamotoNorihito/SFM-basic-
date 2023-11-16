@@ -12,7 +12,12 @@ Agent::Agent()
 	radius = 0.25;		//エージェント半径(m)
 	desiredSpeed = 1;	//希望速さ(m/s)
 	R_ind = 1;			//誘導者の誘導半径(m)
-	R_vis = 3;			//エージェントの視界半径(m)
+	R_vis = 1;			//エージェントの視界半径(m)
+
+	f_driv = Vector2d(0, 0);
+	f_ig = Vector2d(0, 0);
+	f_ij = Vector2d(0, 0);
+	f_iw = Vector2d(0, 0);
 
 	position = Vector2d(0, 0);
 	velocity = Vector2d(0, 0);
@@ -367,22 +372,32 @@ Vector2d Agent::wallInteractForce(Room room)
 //guide用move関数
 void Agent::move_g(std::vector<Agent>& guide, const std::vector<Agent>& evacuee, const Room room, const double stepTime)
 {
-	Vector2d acceleration;
+	Vector2d f_soc;
 
-	acceleration = drivingForce_g(room) + agentInteractForce(guide) + agentInteractForce(evacuee) + wallInteractForce(room);
+	f_driv = drivingForce_g(room);
+	f_ig = agentInteractForce(guide);
+	f_ij = agentInteractForce(evacuee);
+	f_iw = wallInteractForce(room);
 
-	velocity = velocity + stepTime * acceleration;
+	f_soc = f_driv + f_ig + f_ij + f_iw;
+
+	velocity = velocity + (stepTime / mass) * f_soc;
 	position = position + stepTime * velocity;
 }
 
 //evacuee用move関数
 void Agent::move_e(std::vector<Agent>& evacuee, const std::vector<Agent>& guide, const Room room, const double stepTime)
 {
-	Vector2d acceleration;
+	Vector2d f_soc;
 
-	acceleration = drivingForce_e(room, guide, evacuee) + agentInteractForce(guide) + agentInteractForce(evacuee) + wallInteractForce(room);
+	f_driv = drivingForce_e(room, guide, evacuee);
+	f_ig = agentInteractForce(guide);
+	f_ij = agentInteractForce(evacuee);
+	f_iw = wallInteractForce(room);
 
-	velocity = velocity + stepTime * acceleration;
+	f_soc = f_driv + f_ig + f_ij + f_iw;
+
+	velocity = velocity + (stepTime / mass) * f_soc;
 	position = position + stepTime * velocity;
 }
 

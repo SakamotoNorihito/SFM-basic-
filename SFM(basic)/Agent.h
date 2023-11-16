@@ -14,6 +14,11 @@ private:
 	double R_ind;
 	double R_vis;
 
+	Vector2d f_driv;
+	Vector2d f_ig;
+	Vector2d f_ij;
+	Vector2d f_iw;
+
 	Vector2d position;
 	Vector2d velocity;
 	Vector2d desiredDirection;
@@ -42,6 +47,10 @@ public:
 	double getDesiredSpeed() const { return desiredSpeed; }
 	double getR_ind() const { return R_ind; }
 	double getR_vis() const { return R_vis; }
+	Vector2d getF_driv() const { return f_driv; }
+	Vector2d getF_ig() const { return f_ig; }
+	Vector2d getF_ij() const { return f_ij; }
+	Vector2d getF_iw() const { return f_iw; }
 	Vector2d getPosition() const { return position; }
 	Vector2d getVelocity() const { return velocity; }
 	Vector2d getDesiredDirection() const { return desiredDirection; }	
