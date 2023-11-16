@@ -9,6 +9,10 @@ Agent::Agent()
 	radius = 0.25;		//エージェント半径(m)
 	desiredSpeed = 1;	//希望速さ(m/s)
 
+	f_driv = Vector2d(0, 0);
+	f_ij = Vector2d(0, 0);
+	f_iw = Vector2d(0, 0);
+
 	position = Vector2d(0, 0);
 	velocity = Vector2d(0, 0);
 	desiredDirection = Vector2d(0, 0);
@@ -120,11 +124,15 @@ Vector2d Agent::wallInteractForce(Room room)
 
 void Agent::move(vector<Agent>& agents, Room roomData, const double stepTime) 
 {
-	Vector2d acceleration;
+	Vector2d f_soc;
 
-	acceleration = drivingForce(roomData) + agentInteractForce(agents) + wallInteractForce(roomData);
+	f_driv = drivingForce(roomData);
+	f_ij = agentInteractForce(agents);
+	f_iw = wallInteractForce(roomData);
 
-	velocity = velocity + stepTime * acceleration;
+	f_soc = f_driv + f_ij + f_iw;
+
+	velocity = velocity + (stepTime / mass) * f_soc;	
 	position = position + stepTime * velocity;
 }
 

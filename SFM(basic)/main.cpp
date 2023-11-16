@@ -15,7 +15,7 @@ const double room_size_y = 10;
 const double width_exit = 1;
 
 //シミュレーション条件
-const int N_sample = 10;             //サンプル数
+const int N_sample = 5;             //サンプル数
 const int N_evacuee = 100;          //初期避難者数
 const double stepTime = 0.005;      //時間幅
 const int N_step = 18200;           //シミュレーションステップ数
@@ -54,13 +54,17 @@ int main()
         Room room;
         room.setRoom_size_x(room_size_x);
         room.setRoom_size_y(room_size_y);
-        room.setWidth_exit(width_exit);        
+        room.setWidth_exit(width_exit);
 
-        cout << "部屋のサイズ：x" << "," << "部屋のサイズ：y" << "," << "出口幅：w" << "\n"
-            << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << "\n";
+        vector<Agent> evacuee(N_evacuee);
+
+        double radius = evacuee[0].getRadius();
+
+        cout << "部屋のサイズ：x" << "," << "部屋のサイズ：y" << "," << "出口幅：w" << "," << "エージェント半径" << "," << "避難者数" << "\n"
+            << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << "," << radius << "," << N_evacuee << "\n";
         
-        ofs << "部屋のサイズ：x" << "," << "部屋のサイズ：y" << "," << "出口幅：w" << "\n"
-            << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << "\n";
+        ofs << "部屋のサイズ：x" << "," << "部屋のサイズ：y" << "," << "出口幅：w" << "," << "エージェント半径" << "," << "避難者数" << "\n"
+            << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << "," << radius << "," << N_evacuee << "\n";
 
         cout << "時間" << ","
             << "避難完了人数" << ",";
@@ -70,18 +74,26 @@ int main()
 
         for (int i = 0; i < N_evacuee; ++i)
         {           
-            cout << "避難者" << i + 1 << "のx座標" << "," << "避難者" << i + 1 << "のy座標" << ",";
-            ofs << "避難者" << i + 1 << "のx座標" << "," << "避難者" << i + 1 << "のy座標" << ",";
+            cout << "避難者" << i + 1 << "のx座標" << "," << "避難者" << i + 1 << "のy座標" << ","
+                << "避難者" << i + 1 << "のv_x" << "," << "避難者" << i + 1 << "のv_y" << ","
+                << "避難者" << i + 1 << "のf_driv_x" << "," << "避難者" << i + 1 << "のf_driv_y" << ","
+                << "避難者" << i + 1 << "のf_ij_x" << "," << "避難者" << i + 1 << "のf_ij_y" << ","
+                << "避難者" << i + 1 << "のf_iw_x" << "," << "避難者" << i + 1 << "のf_iw_y" << ",";
+
+            ofs << "避難者" << i + 1 << "のx座標" << "," << "避難者" << i + 1 << "のy座標" << ","
+                << "避難者" << i + 1 << "のv_x" << "," << "避難者" << i + 1 << "のv_y" << ","
+                << "避難者" << i + 1 << "のf_driv_x" << "," << "避難者" << i + 1 << "のf_driv_y" << ","
+                << "避難者" << i + 1 << "のf_ij_x" << "," << "避難者" << i + 1 << "のf_ij_y" << ","
+                << "避難者" << i + 1 << "のf_iw_x" << "," << "避難者" << i + 1 << "のf_iw_y" << ",";
         }       
         cout << "\n";
         ofs << "\n";
 
-        vector<Agent> evacuee(N_evacuee);
         setInitialPosition(evacuee, room);        
 
         for (int n = 0; n < N_step; ++n) 
         {
-            removeAgent(evacuee, room);
+            removeAgent(evacuee, room); //避難完了した避難者を排除
 
             int N_escapeCurrent = evacuee.size();
                         
@@ -102,8 +114,17 @@ int main()
 
                 for (int i = 0; i < N_escapeCurrent; ++i) 
                 {
-                    cout << evacuee[i].getPosition().x << "," << evacuee[i].getPosition().y << ",";
-                    ofs << evacuee[i].getPosition().x << "," << evacuee[i].getPosition().y << ",";
+                    cout << evacuee[i].getPosition().x << "," << evacuee[i].getPosition().y << ","
+                        << evacuee[i].getVelocity().x << "," << evacuee[i].getVelocity().y << ","
+                        << evacuee[i].getF_driv().x << "," << evacuee[i].getF_driv().y << ","
+                        << evacuee[i].getF_ij().x << "," << evacuee[i].getF_ij().y << ","
+                        << evacuee[i].getF_iw().x << "," << evacuee[i].getF_iw().y << ",";
+
+                    ofs << evacuee[i].getPosition().x << "," << evacuee[i].getPosition().y << ","
+                        << evacuee[i].getVelocity().x << "," << evacuee[i].getVelocity().y << ","
+                        << evacuee[i].getF_driv().x << "," << evacuee[i].getF_driv().y << ","
+                        << evacuee[i].getF_ij().x << "," << evacuee[i].getF_ij().y << ","
+                        << evacuee[i].getF_iw().x << "," << evacuee[i].getF_iw().y << ",";
                 }
 
                 cout << "\n";

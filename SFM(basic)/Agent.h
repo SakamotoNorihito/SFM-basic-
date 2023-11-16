@@ -12,6 +12,10 @@ private:
 	double radius;
 	double desiredSpeed;
 
+	Vector2d f_driv;
+	Vector2d f_ij;
+	Vector2d f_iw;
+
 	Vector2d position;
 	Vector2d velocity;
 	Vector2d desiredDirection;
@@ -29,13 +33,14 @@ public:
 	void setDesiredDirection(const Vector2d e);
 	
 	double getRadius() const { return radius; }
+	Vector2d getF_driv() const { return f_driv; }
+	Vector2d getF_ij() const { return f_ij; }
+	Vector2d getF_iw() const { return f_iw; }
 	Vector2d getPosition() const { return position; }
 	Vector2d getVelocity() const { return velocity; }
 	Vector2d getDesiredDirection() const { return desiredDirection; }	
 	
-	void move(std::vector<Agent>& agents, Room roomData, const double stepTime);
-
-	
+	void move(std::vector<Agent>& agents, Room roomData, const double stepTime);	
 };
 
 void setInitialPosition(std::vector<Agent>& agents, Room roomData);
