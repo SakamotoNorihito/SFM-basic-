@@ -1,6 +1,8 @@
 # はじめに
 本プログラムは、Social Force Modelと呼ばれる歩行者の移動モデルを用いて、群衆の避難行動をシミュレーションすることを目的に作成されました。Social Force Modelは、群衆シミュレーションを行うために[HelbingとMolnár(1995)](https://journals.aps.org/pre/pdf/10.1103/PhysRevE.51.4282?casa_token=OjqzH1SsARQAAAAA%3AaXoqzGndMGMGdjRnVV0xuwH9tfE3L8crWieBiWEsn6hMq5GAg85ZhVg0YQXM8CzRlbxKM_8heI5jvw)によって導入された歩行者の移動モデルとなっています。
 
+プログラムは2次元のベクトル演算を行うクラス（Vector2d_mathクラス）とソーシャルフォースモデルに基づき避難者に加わる力を計算するクラス（Agentクラス）、部屋の形状を指定するクラス（Roomクラス）から構成されます。
+
 # 動作環境
 OS:Microsoft Windows 11  
 実行環境:VisualStudio2022  
