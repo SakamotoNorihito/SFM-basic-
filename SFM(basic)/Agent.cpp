@@ -11,7 +11,7 @@ Agent::Agent()
 	mass = 80;			//エージェントの質量(kg)
 	radius = 0.25;		//エージェント半径(m)
 	desiredSpeed = 1;	//希望速さ(m/s)
-	R_ind = 5;			//誘導者の誘導半径(m)
+	R_ind = 0;			//誘導者の誘導半径(m)
 	R_vis = 1;			//エージェントの視界半径(m)
 
 	f_driv = Vector2d(0, 0);
@@ -182,26 +182,18 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 					}
 				}
 
-				//自身の視界範囲内に他のエージェントが存在しないとき
-				if (N_aroundAgent == 0)
+				//自身の視界範囲内に他のエージェントが存在し、それらが速度を持っているとき
+				if (N_aroundAgent != 0 && distance(O, v_total) != 0) 
 				{
-					std::random_device seed_gen;
-					std::default_random_engine engine(seed_gen());
-
-					// 0以上1.0未満の値を等確率で発生させる
-					std::uniform_real_distribution<> dist(0, 1.0);
-
-					double theta = 2 * PI * dist(engine);
-					Vector2d randomDirection = Vector2d(cos(theta), sin(theta));
-
-					desiredDirection = unitVector(O, randomDirection);
+					v_average = v_total / N_aroundAgent;
+					desiredDirection = unitVector(O, v_average);
 				}
 
-				//自身の視界範囲内に他のエージェントが存在するとき
+				//自身の視界範囲内に他のエージェントが存在しない。もしくは、存在してもそれらが速度を持っていないとき
 				else
 				{
-					//他のエージェントの速度ベクトルの総和 v_total が零ベクトルのとき
-					if (v_total.x == 0 && v_total.y == 0)
+					//希望方向ベクトルが零ベクトルのとき、希望方向をランダムに決める
+					if (desiredDirection.x == 0 && desiredDirection.y == 0)
 					{
 						std::random_device seed_gen;
 						std::default_random_engine engine(seed_gen());
@@ -215,13 +207,12 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 						desiredDirection = unitVector(O, randomDirection);
 					}
 
-					//他のエージェントの速度ベクトルの総和 v_total が零ベクトルでないとき
+					//希望方向ベクトルが零ベクトルでないとき
 					else
 					{
-						v_average = v_total / N_aroundAgent;
-						desiredDirection = unitVector(O, v_average);
-					}
-				}
+						//壁に沿う移動の実装
+					}					
+				}				
 			}
 		}
 
@@ -253,26 +244,18 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 				}
 			}
 
-			//自身の視界範囲内に他のエージェントが存在しないとき
-			if (N_aroundAgent == 0)
+			//自身の視界範囲内に他のエージェントが存在し、それらが速度を持っているとき
+			if (N_aroundAgent != 0 && distance(O, v_total) != 0)
 			{
-				std::random_device seed_gen;
-				std::default_random_engine engine(seed_gen());
-
-				// 0以上1.0未満の値を等確率で発生させる
-				std::uniform_real_distribution<> dist(0, 1.0);
-
-				double theta = 2 * PI * dist(engine);
-				Vector2d randomDirection = Vector2d(cos(theta), sin(theta));
-
-				desiredDirection = unitVector(O, randomDirection);
+				v_average = v_total / N_aroundAgent;
+				desiredDirection = unitVector(O, v_average);
 			}
 
-			//自身の視界範囲内に他のエージェントが存在するとき
+			//自身の視界範囲内に他のエージェントが存在しない。もしくは、存在してもそれらが速度を持っていないとき
 			else
 			{
-				//他のエージェントの速度ベクトルの総和 v_total が零ベクトルのとき
-				if (v_total.x == 0 && v_total.y == 0)
+				//希望方向ベクトルが零ベクトルのとき、希望方向をランダムに決める
+				if (desiredDirection.x == 0 && desiredDirection.y == 0)
 				{
 					std::random_device seed_gen;
 					std::default_random_engine engine(seed_gen());
@@ -286,13 +269,12 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 					desiredDirection = unitVector(O, randomDirection);
 				}
 
-				//他のエージェントの速度ベクトルの総和 v_total が零ベクトルでないとき
+				//希望方向ベクトルが零ベクトルでないとき
 				else
 				{
-					v_average = v_total / N_aroundAgent;
-					desiredDirection = unitVector(O, v_average);
+					//壁に沿う移動の実装
 				}
-			}
+			}			
 		}
 	}
 

@@ -17,7 +17,7 @@ const double width_exit = 1;
 //シミュレーション条件
 const int N_sample = 3;             //サンプル数
 const int N_guide = 1;              //初期誘導者数
-const int N_evacuee = 25;          //初期避難者数
+const int N_evacuee = 1;          //初期避難者数
 const double stepTime = 0.005;      //時間幅
 const int N_step = 27200;           //シミュレーションステップ数
 //避難時間 = 時間幅 × シミュレーションステップ数
