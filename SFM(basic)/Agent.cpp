@@ -11,7 +11,7 @@ Agent::Agent()
 	mass = 80;			//エージェントの質量(kg)
 	radius = 0.25;		//エージェント半径(m)
 	desiredSpeed = 1;	//希望速さ(m/s)
-	R_ind = 1;			//誘導者の誘導半径(m)
+	R_ind = 5;			//誘導者の誘導半径(m)
 	R_vis = 1;			//エージェントの視界半径(m)
 
 	f_driv = Vector2d(0, 0);
@@ -71,7 +71,7 @@ void Agent::setDesiredDirection(const Vector2d e)
 Vector2d Agent::drivingForce_g(const Room room)
 {
 	const double reactionTime = 0.5;										//反応時間(s)
-	const Vector2d target = Vector2d(room.getRoom_size_x() + radius, 0);	//目的地
+	const Vector2d target = Vector2d(room.getRoom_size_x() + radius, 0);	//目的地（出口）
 	Vector2d f_driv;
 
 	desiredDirection = unitVector(position, target);
@@ -120,12 +120,19 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 			//誘導者の誘導半径内にいるとき
 			if (d_ig_min < R_ind)
 			{
+				/*
+				[A social force evacuation model with the leadership effect, Hou, L et al.]より
 				double rho = exp(-d_ig_min / (2 * R_ind));
-				Vector2d O, e_i;
 				Vector2d e_g = unitVector(guide[nearestGuideNumber].getPosition(), target);
+				*/
+				
+				double xi = 3;		//誘導者に並走する成分と接近する成分を重み付けするためのパラメータ
+				double rho = exp(-d_ig_min / xi);
+				Vector2d O, e_i;
+				Vector2d v_g = guide[nearestGuideNumber].getVelocity();
 				Vector2d n_ig = unitVector(guide[nearestGuideNumber].getPosition(), position);
 
-				e_i = rho * e_g - (1 - rho) * n_ig;
+				e_i = rho * v_g - (1 - rho) * n_ig;
 				desiredDirection = unitVector(O, e_i);
 			}
 
@@ -468,9 +475,9 @@ void setInitialPosition_g(const Room room, std::vector<Agent>& guide)
 	const Vector2d p4 = Vector2d(room_size_x / 2, room_size_y / 4);
 	const Vector2d p5 = Vector2d(room_size_x / 2, 0);
 	const Vector2d p6 = Vector2d(room_size_x / 2, -room_size_y / 4);
-	const Vector2d p7 = Vector2d(room_size_x * (3 / 4), room_size_y / 4);
-	const Vector2d p8 = Vector2d(room_size_x * (3 / 4), 0);
-	const Vector2d p9 = Vector2d(room_size_x * (3 / 4), -room_size_y / 4);
+	const Vector2d p7 = Vector2d(3 * room_size_x / 4, room_size_y / 4);
+	const Vector2d p8 = Vector2d(3 * room_size_x / 4, 0);
+	const Vector2d p9 = Vector2d(3 * room_size_x / 4, -room_size_y / 4);
 
 	for (int i = 0; i < N_guide; ++i)
 	{
@@ -481,13 +488,13 @@ void setInitialPosition_g(const Room room, std::vector<Agent>& guide)
 			break;
 
 		case 1:
-			guide[i].setPosition(Vector2d(room_size_x / 2, (room_size_y / 2) - guide[i].getRadius()));
+			guide[i].setPosition(Vector2d(p3));
 			break;
 		case 2:
-			guide[i].setPosition(Vector2d(room_size_x / 2, (-room_size_y / 2) + guide[i].getRadius()));
+			guide[i].setPosition(Vector2d(p7));
 			break;
 		case 3:
-			guide[i].setPosition(Vector2d(guide[i].getRadius(), 3));
+			guide[i].setPosition(Vector2d(p9));
 			break;
 		case 4:
 			guide[i].setPosition(Vector2d(guide[i].getRadius(), -3));
