@@ -81,7 +81,7 @@ Vector2d Agent::drivingForce_g(const Room room)
 }
 
 //evacuee用drivingForce
-Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide, const std::vector<Agent>& evacuee)
+Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const std::vector<Agent>& evacuee)
 {
 	const double reactionTime = 0.5;										//反応時間(s)
 	const Vector2d target = Vector2d(room.getRoom_size_x() + radius, 0);	//目的地
@@ -192,7 +192,7 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 				//自身の視界範囲内に他のエージェントが存在しない。もしくは、存在してもそれらが速度を持っていないとき
 				else
 				{
-					//希望方向ベクトルが零ベクトルのとき、希望方向をランダムに決める
+					//希望方向ベクトルが零ベクトルのとき、希望方向をランダムに初期化する
 					if (desiredDirection.x == 0 && desiredDirection.y == 0)
 					{
 						std::random_device seed_gen;
@@ -210,7 +210,76 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 					//希望方向ベクトルが零ベクトルでないとき
 					else
 					{
-						//壁に沿う移動の実装
+						const vector<vector<Vector2d>> wallCornerPoint = room.createWall();
+						const int N_wall = wallCornerPoint.size();		//壁の数(個)
+
+						double d_iw = 0;								//自身と壁との距離(m)
+						vector<int> isVisibleWallNumber;				//視認できる壁の番号を格納する配列						
+
+						for (int n = 0; n < N_wall; ++n)
+						{
+							Vector2d nearestPoint = getNearestPoint(wallCornerPoint[n][0], wallCornerPoint[n][1], position);
+							d_iw = distance(position, nearestPoint);
+
+							//自身の視界範囲内に壁が見えるとき
+							if (d_iw < R_vis)
+							{
+								isVisibleWallNumber.push_back(n);
+							}							
+						}
+
+						//見える壁がない時、希望方向を上書きしない
+						if (isVisibleWallNumber.size() == 0)
+						{
+
+						}
+
+						//見える壁が１つの時、見える壁に沿って移動する
+						else if (isVisibleWallNumber.size() == 1)
+						{
+							Vector2d alongWallDirection = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
+							
+							//希望方向と壁に沿う単位ベクトルの内積を計算し、それまでの希望方向に沿った方向に進行する
+							if (dotProduct(desiredDirection, alongWallDirection) >= 0)
+							{
+								desiredDirection.x = alongWallDirection.x;
+								desiredDirection.y = alongWallDirection.y;
+							}
+							else
+							{
+								desiredDirection.x = -alongWallDirection.x;
+								desiredDirection.y = -alongWallDirection.y;
+							}
+						}
+
+						//見える壁が２つの時、沿う壁を変更する
+						else
+						{
+							Vector2d alongWallDirection1 = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
+							Vector2d alongWallDirection2 = unitVector(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1]);
+
+							//壁１が進行方向に存在するとき、壁２から遠ざかる
+							if (dotProduct(desiredDirection, alongWallDirection1) == 0)
+							{
+								Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1], position);
+								Vector2d n_iw = unitVector(nearestPoint, position);
+
+								desiredDirection.x = n_iw.x;
+								desiredDirection.y = n_iw.y;								
+							}
+							//壁２が進行方向に存在するとき、壁１から遠ざかる
+							else if (dotProduct(desiredDirection, alongWallDirection2) == 0)
+							{
+								Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1], position);
+								Vector2d n_iw = unitVector(nearestPoint, position);
+
+								desiredDirection.x = n_iw.x;
+								desiredDirection.y = n_iw.y;
+							}							
+						}
+
+						//見えている壁の記憶を破棄する
+						isVisibleWallNumber.clear();
 					}					
 				}				
 			}
@@ -272,7 +341,76 @@ Vector2d Agent::drivingForce_e(const Room room, const std::vector<Agent>& guide,
 				//希望方向ベクトルが零ベクトルでないとき
 				else
 				{
-					//壁に沿う移動の実装
+					const vector<vector<Vector2d>> wallCornerPoint = room.createWall();
+					const int N_wall = wallCornerPoint.size();		//壁の数(個)
+
+					double d_iw = 0;								//自身と壁との距離(m)
+					vector<int> isVisibleWallNumber;				//視認できる壁の番号を格納する配列						
+
+					for (int n = 0; n < N_wall; ++n)
+					{
+						Vector2d nearestPoint = getNearestPoint(wallCornerPoint[n][0], wallCornerPoint[n][1], position);
+						d_iw = distance(position, nearestPoint);
+
+						//自身の視界範囲内に壁が見えるとき
+						if (d_iw < R_vis)
+						{
+							isVisibleWallNumber.push_back(n);
+						}
+					}
+
+					//見える壁がない時、希望方向を上書きしない
+					if (isVisibleWallNumber.size() == 0)
+					{
+
+					}
+
+					//見える壁が１つの時、見える壁に沿って移動する
+					else if (isVisibleWallNumber.size() == 1)
+					{
+						Vector2d alongWallDirection = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
+
+						//希望方向と壁に沿う単位ベクトルの内積を計算し、それまでの希望方向に沿った方向に進行する
+						if (dotProduct(desiredDirection, alongWallDirection) >= 0)
+						{
+							desiredDirection.x = alongWallDirection.x;
+							desiredDirection.y = alongWallDirection.y;
+						}
+						else
+						{
+							desiredDirection.x = -alongWallDirection.x;
+							desiredDirection.y = -alongWallDirection.y;
+						}
+					}
+
+					//見える壁が２つの時、沿う壁を変更する
+					else
+					{
+						Vector2d alongWallDirection1 = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
+						Vector2d alongWallDirection2 = unitVector(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1]);
+
+						//壁１が進行方向に存在するとき、壁２から遠ざかる
+						if (dotProduct(desiredDirection, alongWallDirection1) == 0)
+						{
+							Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1], position);
+							Vector2d n_iw = unitVector(nearestPoint, position);
+
+							desiredDirection.x = n_iw.x;
+							desiredDirection.y = n_iw.y;
+						}
+						//壁２が進行方向に存在するとき、壁１から遠ざかる
+						else if (dotProduct(desiredDirection, alongWallDirection2) == 0)
+						{
+							Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1], position);
+							Vector2d n_iw = unitVector(nearestPoint, position);
+
+							desiredDirection.x = n_iw.x;
+							desiredDirection.y = n_iw.y;
+						}
+					}
+
+					//見えている壁の記憶を破棄する
+					isVisibleWallNumber.clear();
 				}
 			}			
 		}
