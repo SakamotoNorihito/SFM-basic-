@@ -15,11 +15,12 @@ const double room_size_y = 10;
 const double width_exit = 1;
 
 //シミュレーション条件
-const int N_sample = 5;             //サンプル数
+const int N_sample = 20;             //サンプル数
 const int N_guide = 1;              //初期誘導者数
 const int N_evacuee = 1;          //初期避難者数
 const double stepTime = 0.005;      //時間幅
-const int N_step = 27200;           //シミュレーションステップ数
+const double coeff_dataOutPut = 1;   //データ出力の時間幅を決定する係数（1…1/1(= 1)秒、10…1/10(= 0.1)秒、100…1/100(= 0.01)秒）
+const int N_step = 27200;           //シミュレーションステップ数(135[s])
 //避難時間 = 時間幅 × シミュレーションステップ数
 
 int countEscapeCompleteNumber(const int N_initial, vector<Agent>& agents);
@@ -144,7 +145,7 @@ int main()
                 evacuee[i].move_e(evacuee, guide, room, stepTime);
             }
 
-            if (n % (int)(1 / stepTime) == 0) //1秒ごとに避難者の位置を記録する
+            if (n % (int)(1 / (stepTime * coeff_dataOutPut)) == 0) //指定時間ごとに避難者の位置を記録する
             {
                 //避難完了者数の数え上げ
                 int N_escapeCompleteEvacuee = countEscapeCompleteNumber(N_evacuee, evacuee);

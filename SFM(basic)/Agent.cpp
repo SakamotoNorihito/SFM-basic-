@@ -84,7 +84,7 @@ Vector2d Agent::drivingForce_g(const Room room)
 Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const std::vector<Agent>& evacuee)
 {
 	const double reactionTime = 0.5;										//反応時間(s)
-	const Vector2d target = Vector2d(room.getRoom_size_x() + radius, 0);	//目的地
+	const Vector2d target = Vector2d(room.getRoom_size_x(), 0);				//目的地
 	Vector2d f_driv;
 	
 	double d_it = distance(position, target);	//自身と目的地までの距離
@@ -211,9 +211,10 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 					else
 					{
 						const vector<vector<Vector2d>> wallCornerPoint = room.createWall();
-						const int N_wall = wallCornerPoint.size();		//壁の数(個)
+						const int N_wall = wallCornerPoint.size();		//壁の数(個)					
 
 						double d_iw = 0;								//自身と壁との距離(m)
+						static bool changeDirection = true;				//壁が2つ見えている時に1度だけ希望方向を変更するための判定用変数
 						vector<int> isVisibleWallNumber;				//視認できる壁の番号を格納する配列						
 
 						for (int n = 0; n < N_wall; ++n)
@@ -225,7 +226,7 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 							if (d_iw < R_vis)
 							{
 								isVisibleWallNumber.push_back(n);
-							}							
+							}
 						}
 
 						//見える壁がない時、希望方向を上書きしない
@@ -238,7 +239,7 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 						else if (isVisibleWallNumber.size() == 1)
 						{
 							Vector2d alongWallDirection = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
-							
+
 							//希望方向と壁に沿う単位ベクトルの内積を計算し、それまでの希望方向に沿った方向に進行する
 							if (dotProduct(desiredDirection, alongWallDirection) >= 0)
 							{
@@ -250,37 +251,43 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 								desiredDirection.x = -alongWallDirection.x;
 								desiredDirection.y = -alongWallDirection.y;
 							}
+
+							changeDirection = true;		//壁が2つ見えた時に希望方向を切り替えられるようにフラグをONにする
 						}
 
 						//見える壁が２つの時、沿う壁を変更する
-						else
-						{
-							Vector2d alongWallDirection1 = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
-							Vector2d alongWallDirection2 = unitVector(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1]);
-
-							//壁１が進行方向に存在するとき、壁２から遠ざかる
-							if (dotProduct(desiredDirection, alongWallDirection1) == 0)
+						else if (isVisibleWallNumber.size() == 2)
+						{							
+							//希望方向変更フラグがONの時
+							if (changeDirection == true)
 							{
-								Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1], position);
-								Vector2d n_iw = unitVector(nearestPoint, position);
+								Vector2d alongWallDirection1 = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
+								Vector2d alongWallDirection2 = unitVector(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1]);
 
-								desiredDirection.x = n_iw.x;
-								desiredDirection.y = n_iw.y;								
-							}
-							//壁２が進行方向に存在するとき、壁１から遠ざかる
-							else if (dotProduct(desiredDirection, alongWallDirection2) == 0)
-							{
-								Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1], position);
-								Vector2d n_iw = unitVector(nearestPoint, position);
+								//壁１が進行方向に存在するとき、壁２から遠ざかる
+								if (dotProduct(desiredDirection, alongWallDirection1) == 0)
+								{
+									Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1], position);
+									Vector2d n_iw = unitVector(nearestPoint, position);
 
-								desiredDirection.x = n_iw.x;
-								desiredDirection.y = n_iw.y;
+									desiredDirection.x = n_iw.x;
+									desiredDirection.y = n_iw.y;
+								}
+								//壁２が進行方向に存在するとき、壁１から遠ざかる
+								else if (dotProduct(desiredDirection, alongWallDirection2) == 0)
+								{
+									Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1], position);
+									Vector2d n_iw = unitVector(nearestPoint, position);
+
+									desiredDirection.x = n_iw.x;
+									desiredDirection.y = n_iw.y;
+								}
+
+								isVisibleWallNumber.clear();		//見えている壁の記憶を破棄する
+								changeDirection = false;			//希望方向変更フラグをOFFにする
 							}							
-						}
-
-						//見えている壁の記憶を破棄する
-						isVisibleWallNumber.clear();
-					}					
+						}						
+					}
 				}				
 			}
 		}
@@ -323,7 +330,7 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 			//自身の視界範囲内に他のエージェントが存在しない。もしくは、存在してもそれらが速度を持っていないとき
 			else
 			{
-				//希望方向ベクトルが零ベクトルのとき、希望方向をランダムに決める
+				//希望方向ベクトルが零ベクトルのとき、希望方向をランダムに初期化する
 				if (desiredDirection.x == 0 && desiredDirection.y == 0)
 				{
 					std::random_device seed_gen;
@@ -342,9 +349,10 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 				else
 				{
 					const vector<vector<Vector2d>> wallCornerPoint = room.createWall();
-					const int N_wall = wallCornerPoint.size();		//壁の数(個)
+					const int N_wall = wallCornerPoint.size();		//壁の数(個)					
 
 					double d_iw = 0;								//自身と壁との距離(m)
+					static bool changeDirection = true;				//壁が2つ見えている時に1度だけ希望方向を変更するための判定用変数
 					vector<int> isVisibleWallNumber;				//視認できる壁の番号を格納する配列						
 
 					for (int n = 0; n < N_wall; ++n)
@@ -381,38 +389,44 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 							desiredDirection.x = -alongWallDirection.x;
 							desiredDirection.y = -alongWallDirection.y;
 						}
+
+						changeDirection = true;		//壁が2つ見えた時に希望方向を切り替えられるようにフラグをONにする
 					}
 
 					//見える壁が２つの時、沿う壁を変更する
-					else
+					else if (isVisibleWallNumber.size() == 2)
 					{
-						Vector2d alongWallDirection1 = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
-						Vector2d alongWallDirection2 = unitVector(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1]);
-
-						//壁１が進行方向に存在するとき、壁２から遠ざかる
-						if (dotProduct(desiredDirection, alongWallDirection1) == 0)
+						//希望方向変更フラグがONの時
+						if (changeDirection == true)
 						{
-							Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1], position);
-							Vector2d n_iw = unitVector(nearestPoint, position);
+							Vector2d alongWallDirection1 = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
+							Vector2d alongWallDirection2 = unitVector(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1]);
 
-							desiredDirection.x = n_iw.x;
-							desiredDirection.y = n_iw.y;
-						}
-						//壁２が進行方向に存在するとき、壁１から遠ざかる
-						else if (dotProduct(desiredDirection, alongWallDirection2) == 0)
-						{
-							Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1], position);
-							Vector2d n_iw = unitVector(nearestPoint, position);
+							//壁１が進行方向に存在するとき、壁２から遠ざかる
+							if (dotProduct(desiredDirection, alongWallDirection1) == 0)
+							{
+								Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1], position);
+								Vector2d n_iw = unitVector(nearestPoint, position);
 
-							desiredDirection.x = n_iw.x;
-							desiredDirection.y = n_iw.y;
+								desiredDirection.x = n_iw.x;
+								desiredDirection.y = n_iw.y;
+							}
+							//壁２が進行方向に存在するとき、壁１から遠ざかる
+							else if (dotProduct(desiredDirection, alongWallDirection2) == 0)
+							{
+								Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1], position);
+								Vector2d n_iw = unitVector(nearestPoint, position);
+
+								desiredDirection.x = n_iw.x;
+								desiredDirection.y = n_iw.y;
+							}
+
+							isVisibleWallNumber.clear();		//見えている壁の記憶を破棄する
+							changeDirection = false;			//希望方向変更フラグをOFFにする
 						}
 					}
-
-					//見えている壁の記憶を破棄する
-					isVisibleWallNumber.clear();
 				}
-			}			
+			}
 		}
 	}
 
@@ -604,7 +618,7 @@ void setInitialPosition_g(const Room room, std::vector<Agent>& guide)
 		switch (i)	//誘導者毎初期配置を指定する
 		{
 		case 0:
-			guide[i].setPosition(Vector2d(guide[i].getRadius(), 0));	//部屋の左壁中央
+			guide[i].setPosition(Vector2d(room_size_x + 5, 0));	//部屋の左壁中央
 			break;
 
 		case 1:
