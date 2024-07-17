@@ -13,6 +13,7 @@ private:
 	double desiredSpeed;
 	double R_ind;
 	double R_vis;
+	bool isExitVisible;
 
 	Vector2d f_driv;
 	Vector2d f_ig;
@@ -22,6 +23,10 @@ private:
 	Vector2d position;
 	Vector2d velocity;
 	Vector2d desiredDirection;
+	Vector2d desiredVelocity;
+
+	//oŒû‚ªŒ©‚¦‚é‚©”»’è‚·‚éŠÖ”
+	bool canSeeExit(const Room room);
 
 	//guide—pdrivingForce
 	Vector2d drivingForce_g(const Room room);

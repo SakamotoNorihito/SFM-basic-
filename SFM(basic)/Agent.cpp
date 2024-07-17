@@ -12,7 +12,8 @@ Agent::Agent()
 	radius = 0.25;		//エージェント半径(m)
 	desiredSpeed = 1;	//希望速さ(m/s)
 	R_ind = 0;			//誘導者の誘導半径(m)
-	R_vis = 1;			//エージェントの視界半径(m)
+	R_vis = 2;			//エージェントの視界半径(m)
+	isExitVisible = false;
 
 	f_driv = Vector2d(0, 0);
 	f_ig = Vector2d(0, 0);
@@ -22,6 +23,7 @@ Agent::Agent()
 	position = Vector2d(0, 0);
 	velocity = Vector2d(0, 0);
 	desiredDirection = Vector2d(0, 0);
+	desiredVelocity = Vector2d(0, 0);
 }
 
 void Agent::setMass(const double m)
@@ -67,6 +69,46 @@ void Agent::setDesiredDirection(const Vector2d e)
 	this->desiredDirection.y = e.y;
 }
 
+bool Agent::canSeeExit(const Room room)
+{
+	const Vector2d destination = Vector2d(room.getRoom_size_x(), 0);
+	double delta = 0;	//確率が変化する領域の幅
+	double p = 0;		//出口が見える確率
+	double d_ie = distance(position, destination);		// 自身と目的地までの間の距離
+
+	//出口が確実に視認できるとき
+	if (d_ie <= R_vis - delta)
+	{
+		p = 1;
+	}
+	//出口が確実に視認できないとき
+	else if (d_ie >= R_vis + delta)
+	{
+		p = 0;
+	}
+	else
+	{
+		p = (-1 / (2 * delta)) * (d_ie - (R_vis + delta));	// 距離に応じた出口が見える確率を計算
+	}	
+
+	//出口視認判定を行うための乱数を生成する
+	std::random_device seed_gen;
+	std::default_random_engine engine(seed_gen());	
+	std::uniform_real_distribution<> dist(0, 1.0);		// 0以上1.0未満の値を等確率で発生させる
+	double N_random = dist(engine);
+
+	//乱数N_randomが出口が見える確率p以下の場合
+	if (N_random <= p)
+	{
+		return true;	// 出口が見える
+	}
+	//乱数N_randomが出口が見える確率pより大きい場合
+	else
+	{
+		return false;	// 出口が見えない
+	}
+}
+
 //guide用drivingForce
 Vector2d Agent::drivingForce_g(const Room room)
 {
@@ -84,16 +126,30 @@ Vector2d Agent::drivingForce_g(const Room room)
 Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const std::vector<Agent>& evacuee)
 {
 	const double reactionTime = 0.5;										//反応時間(s)
-	const Vector2d target = Vector2d(room.getRoom_size_x(), 0);				//目的地
+	const Vector2d destination = Vector2d(room.getRoom_size_x(), 0);		//目的地
 	Vector2d f_driv;
-	
-	double d_it = distance(position, target);	//自身と目的地までの距離
+
+	//出口を認識できていないとき
+	if (isExitVisible == false)
+	{
+		isExitVisible = canSeeExit(room);
+	}	
 
 	//目的地が視界に入っているとき
-	if (d_it < R_vis)
+	if (isExitVisible == true)
 	{
-		desiredDirection = unitVector(position, target);
+		desiredDirection = unitVector(position, destination);
 	}
+
+
+
+	/*
+	desiredVelocityを計算してf_drivを計算できるようにプログラムを改良
+	*/
+
+
+
+	
 
 	//目的地が視界に入っていないとき
 	else
@@ -613,22 +669,23 @@ void setInitialPosition_g(const Room room, std::vector<Agent>& guide)
 	const Vector2d p8 = Vector2d(3 * room_size_x / 4, 0);
 	const Vector2d p9 = Vector2d(3 * room_size_x / 4, -room_size_y / 4);
 
+	const Vector2d outOfRoom = Vector2d(1000, 0);
+
 	for (int i = 0; i < N_guide; ++i)
 	{
 		switch (i)	//誘導者毎初期配置を指定する
 		{
 		case 0:
-			guide[i].setPosition(Vector2d(room_size_x + 5, 0));	//部屋の左壁中央
+			guide[i].setPosition(outOfRoom);	//部屋の左壁中央
 			break;
-
 		case 1:
-			guide[i].setPosition(Vector2d(p3));
+			guide[i].setPosition(p3);
 			break;
 		case 2:
-			guide[i].setPosition(Vector2d(p7));
+			guide[i].setPosition(p4);
 			break;
 		case 3:
-			guide[i].setPosition(Vector2d(p9));
+			guide[i].setPosition(p6);
 			break;
 		case 4:
 			guide[i].setPosition(Vector2d(guide[i].getRadius(), -3));

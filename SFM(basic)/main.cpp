@@ -7,6 +7,7 @@
 #include"Vector2d_math.h"
 #include "Agent.h"
 #include"Room.h"
+#include <random>
 using namespace std;
 
 //部屋の形状
@@ -15,9 +16,9 @@ const double room_size_y = 10;
 const double width_exit = 1;
 
 //シミュレーション条件
-const int N_sample = 20;             //サンプル数
+const int N_sample = 10;             //サンプル数
 const int N_guide = 1;              //初期誘導者数
-const int N_evacuee = 1;          //初期避難者数
+const int N_evacuee = 100;          //初期避難者数
 const double stepTime = 0.005;      //時間幅
 const double coeff_dataOutPut = 1;   //データ出力の時間幅を決定する係数（1…1/1(= 1)秒、10…1/10(= 0.1)秒、100…1/100(= 0.01)秒）
 const int N_step = 27200;           //シミュレーションステップ数(135[s])
@@ -62,7 +63,6 @@ int main()
         vector<Agent> guide(N_guide);
         vector<Agent> evacuee(N_evacuee);
 
-        //guide[0].setR_ind(0);
         double R_ind = guide[0].getR_ind();
         double R_vis = evacuee[0].getR_vis();
         double radius = evacuee[0].getRadius();
