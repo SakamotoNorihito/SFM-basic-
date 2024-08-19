@@ -11,17 +11,17 @@
 using namespace std;
 
 //部屋の形状
-const double room_size_x = 10;
-const double room_size_y = 10;
+const double room_size_x = 50;
+const double room_size_y = 50;
 const double width_exit = 1;
 
 //シミュレーション条件
-const int N_sample = 10;             //サンプル数
+const int N_sample = 5;             //サンプル数
 const int N_guide = 1;              //初期誘導者数
-const int N_evacuee = 100;          //初期避難者数
+const int N_evacuee =200;          //初期避難者数
 const double stepTime = 0.005;      //時間幅
 const double coeff_dataOutPut = 1;   //データ出力の時間幅を決定する係数（1…1/1(= 1)秒、10…1/10(= 0.1)秒、100…1/100(= 0.01)秒）
-const int N_step = 27200;           //シミュレーションステップ数(135[s])
+const int N_step = 60200;           //シミュレーションステップ数(135[s])
 //避難時間 = 時間幅 × シミュレーションステップ数
 
 int countEscapeCompleteNumber(const int N_initial, vector<Agent>& agents);
