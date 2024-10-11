@@ -16,12 +16,12 @@ const double room_size_y = 50;
 const double width_exit = 1;
 
 //シミュレーション条件
-const int N_sample = 5;             //サンプル数
+const int N_sample = 30;             //サンプル数
 const int N_guide = 1;              //初期誘導者数
-const int N_evacuee =200;          //初期避難者数
-const double stepTime = 0.005;      //時間幅
+const int N_evacuee = 30;          //初期避難者数
+const double stepTime = 0.01;      //時間幅（初期値：0.005[s]）
 const double coeff_dataOutPut = 1;   //データ出力の時間幅を決定する係数（1…1/1(= 1)秒、10…1/10(= 0.1)秒、100…1/100(= 0.01)秒）
-const int N_step = 60200;           //シミュレーションステップ数(135[s])
+const int N_step = 7600;           //シミュレーションステップ数(180[s])
 //避難時間 = 時間幅 × シミュレーションステップ数
 
 int countEscapeCompleteNumber(const int N_initial, vector<Agent>& agents);
@@ -88,7 +88,9 @@ int main()
         {
             cout << "誘導者" << i + 1 << "のx座標" << "," << "誘導者" << i + 1 << "のy座標" << ","
                 << "誘導者" << i + 1 << "のe_x" << "," << "誘導者" << i + 1 << "のe_y" << ","
+                << "誘導者" << i + 1 << "のdesiredSpeed" << ","
                 << "誘導者" << i + 1 << "のv_x" << "," << "誘導者" << i + 1 << "のv_y" << ","
+                << "誘導者" << i + 1 << "の実速度の大きさv" << ","
                 << "誘導者" << i + 1 << "のf_driv_x" << "," << "誘導者" << i + 1 << "のf_driv_y" << ","
                 << "誘導者" << i + 1 << "のf_ig_x" << "," << "誘導者" << i + 1 << "のf_ig_y" << ","
                 << "誘導者" << i + 1 << "のf_ij_x" << "," << "誘導者" << i + 1 << "のf_ij_y" << ","
@@ -96,7 +98,9 @@ int main()
 
             ofs << "誘導者" << i + 1 << "のx座標" << "," << "誘導者" << i + 1 << "のy座標" << ","
                 << "誘導者" << i + 1 << "のe_x" << "," << "誘導者" << i + 1 << "のe_y" << ","
+                << "誘導者" << i + 1 << "のdesiredSpeed" << ","
                 << "誘導者" << i + 1 << "のv_x" << "," << "誘導者" << i + 1 << "のv_y" << ","
+                << "誘導者" << i + 1 << "の実速度の大きさv" << ","
                 << "誘導者" << i + 1 << "のf_driv_x" << "," << "誘導者" << i + 1 << "のf_driv_y" << ","
                 << "誘導者" << i + 1 << "のf_ig_x" << "," << "誘導者" << i + 1 << "のf_ig_y" << ","
                 << "誘導者" << i + 1 << "のf_ij_x" << "," << "誘導者" << i + 1 << "のf_ij_y" << ","
@@ -107,7 +111,9 @@ int main()
         {           
             cout << "避難者" << i + 1 << "のx座標" << "," << "避難者" << i + 1 << "のy座標" << ","
                 << "避難者" << i + 1 << "のe_x" << "," << "避難者" << i + 1 << "のe_y" << ","
+                << "避難者" << i + 1 << "のdesiredSpeed" << ","
                 << "避難者" << i + 1 << "のv_x" << "," << "避難者" << i + 1 << "のv_y" << ","
+                << "避難者" << i + 1 << "の実速度の大きさv" << ","
                 << "避難者" << i + 1 << "のf_driv_x" << "," << "避難者" << i + 1 << "のf_driv_y" << ","
                 << "避難者" << i + 1 << "のf_ig_x" << "," << "避難者" << i + 1 << "のf_ig_y" << ","
                 << "避難者" << i + 1 << "のf_ij_x" << "," << "避難者" << i + 1 << "のf_ij_y" << ","
@@ -115,7 +121,9 @@ int main()
 
             ofs << "避難者" << i + 1 << "のx座標" << "," << "避難者" << i + 1 << "のy座標" << ","
                 << "避難者" << i + 1 << "のe_x" << "," << "避難者" << i + 1 << "のe_y" << ","
+                << "避難者" << i + 1 << "のdesiredSpeed" << ","
                 << "避難者" << i + 1 << "のv_x" << "," << "避難者" << i + 1 << "のv_y" << ","
+                << "避難者" << i + 1 << "の実速度の大きさv" << ","
                 << "避難者" << i + 1 << "のf_driv_x" << "," << "避難者" << i + 1 << "のf_driv_y" << ","
                 << "避難者" << i + 1 << "のf_ig_x" << "," << "避難者" << i + 1 << "のf_ig_y" << ","
                 << "避難者" << i + 1 << "のf_ij_x" << "," << "避難者" << i + 1 << "のf_ij_y" << ","
@@ -162,7 +170,9 @@ int main()
                     {
                         cout << guide[i].getPosition().x << "," << guide[i].getPosition().y << ","
                             << guide[i].getDesiredDirection().x << "," << guide[i].getDesiredDirection().y << ","
+                            << guide[i].getDesiredSpeed() << ","
                             << guide[i].getVelocity().x << "," << guide[i].getVelocity().y << ","
+                            << sqrt((guide[i].getVelocity().x * guide[i].getVelocity().x) + (guide[i].getVelocity().y * guide[i].getVelocity().y)) << ","
                             << guide[i].getF_driv().x << "," << guide[i].getF_driv().y << ","
                             << guide[i].getF_ig().x << "," << guide[i].getF_ig().y << ","
                             << guide[i].getF_ij().x << "," << guide[i].getF_ij().y << ","
@@ -170,7 +180,9 @@ int main()
 
                         ofs << guide[i].getPosition().x << "," << guide[i].getPosition().y << ","
                             << guide[i].getDesiredDirection().x << "," << guide[i].getDesiredDirection().y << ","
+                            << guide[i].getDesiredSpeed() << ","
                             << guide[i].getVelocity().x << "," << guide[i].getVelocity().y << ","
+                            << sqrt((guide[i].getVelocity().x * guide[i].getVelocity().x) + (guide[i].getVelocity().y * guide[i].getVelocity().y)) << ","
                             << guide[i].getF_driv().x << "," << guide[i].getF_driv().y << ","
                             << guide[i].getF_ig().x << "," << guide[i].getF_ig().y << ","
                             << guide[i].getF_ij().x << "," << guide[i].getF_ij().y << ","
@@ -187,7 +199,9 @@ int main()
                     {
                         cout << guide[i].getPosition().x << "," << guide[i].getPosition().y << ","
                             << guide[i].getDesiredDirection().x << "," << guide[i].getDesiredDirection().y << ","
+                            << guide[i].getDesiredSpeed() << ","
                             << guide[i].getVelocity().x << "," << guide[i].getVelocity().y << ","
+                            << sqrt((guide[i].getVelocity().x * guide[i].getVelocity().x) + (guide[i].getVelocity().y * guide[i].getVelocity().y)) << ","
                             << guide[i].getF_driv().x << "," << guide[i].getF_driv().y << ","
                             << guide[i].getF_ig().x << "," << guide[i].getF_ig().y << ","
                             << guide[i].getF_ij().x << "," << guide[i].getF_ij().y << ","
@@ -195,7 +209,9 @@ int main()
 
                         ofs << guide[i].getPosition().x << "," << guide[i].getPosition().y << ","
                             << guide[i].getDesiredDirection().x << "," << guide[i].getDesiredDirection().y << ","
+                            << guide[i].getDesiredSpeed() << ","
                             << guide[i].getVelocity().x << "," << guide[i].getVelocity().y << ","
+                            << sqrt((guide[i].getVelocity().x * guide[i].getVelocity().x) + (guide[i].getVelocity().y * guide[i].getVelocity().y)) << ","
                             << guide[i].getF_driv().x << "," << guide[i].getF_driv().y << ","
                             << guide[i].getF_ig().x << "," << guide[i].getF_ig().y << ","
                             << guide[i].getF_ij().x << "," << guide[i].getF_ij().y << ","
@@ -206,7 +222,9 @@ int main()
                     {
                         cout << "" << "," << "" << ","
                             << "" << "," << "" << ","
+                            << "" << ","
                             << "" << "," << "" << ","
+                            << "" << ","
                             << "" << "," << "" << ","
                             << "" << "," << "" << ","
                             << "" << "," << "" << ","
@@ -214,7 +232,9 @@ int main()
 
                         ofs << "" << "," << "" << ","
                             << "" << "," << "" << ","
+                            << "" << ","
                             << "" << "," << "" << ","
+                            << "" << ","
                             << "" << "," << "" << ","
                             << "" << "," << "" << ","
                             << "" << "," << "" << ","
@@ -226,7 +246,9 @@ int main()
                 {
                     cout << evacuee[i].getPosition().x << "," << evacuee[i].getPosition().y << ","
                         << evacuee[i].getDesiredDirection().x << "," << evacuee[i].getDesiredDirection().y << ","
+                        << evacuee[i].getDesiredSpeed() << ","
                         << evacuee[i].getVelocity().x << "," << evacuee[i].getVelocity().y << ","
+                        << sqrt((evacuee[i].getVelocity().x * evacuee[i].getVelocity().x) + (evacuee[i].getVelocity().y * evacuee[i].getVelocity().y)) << ","
                         << evacuee[i].getF_driv().x << "," << evacuee[i].getF_driv().y << ","
                         << evacuee[i].getF_ig().x << "," << evacuee[i].getF_ig().y << ","
                         << evacuee[i].getF_ij().x << "," << evacuee[i].getF_ij().y << ","
@@ -234,7 +256,9 @@ int main()
 
                     ofs << evacuee[i].getPosition().x << "," << evacuee[i].getPosition().y << ","
                         << evacuee[i].getDesiredDirection().x << "," << evacuee[i].getDesiredDirection().y << ","
+                        << evacuee[i].getDesiredSpeed() << ","
                         << evacuee[i].getVelocity().x << "," << evacuee[i].getVelocity().y << ","
+                        << sqrt((evacuee[i].getVelocity().x * evacuee[i].getVelocity().x) + (evacuee[i].getVelocity().y * evacuee[i].getVelocity().y)) << ","
                         << evacuee[i].getF_driv().x << "," << evacuee[i].getF_driv().y << ","
                         << evacuee[i].getF_ig().x << "," << evacuee[i].getF_ig().y << ","
                         << evacuee[i].getF_ij().x << "," << evacuee[i].getF_ij().y << ","

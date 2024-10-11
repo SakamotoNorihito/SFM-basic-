@@ -25,10 +25,11 @@ private:
 	Vector2d desiredDirection;
 	Vector2d desiredVelocity;
 
+	//希望速さを計算する関数
+	double calculateDesiredSpeed(const std::vector<Agent>& guide, const std::vector<Agent>& evacuee);
 	//出口が見えるか判定する関数
 	bool canSeeExit(const Room room);
-
-	//guide用drivingForce
+		//guide用drivingForce
 	Vector2d drivingForce_g(const Room room);
 	//evacuee用drivingForce
 	Vector2d drivingForce_e(const Room room, const std::vector<Agent>& guide, const std::vector<Agent>& evacuee);
@@ -46,6 +47,7 @@ public:
 	void setPosition(const Vector2d p);
 	void setVelocity(const Vector2d v);
 	void setDesiredDirection(const Vector2d e);
+	void setDesiredVelocity(const Vector2d e_v);
 	
 	double getMass() const { return mass; }
 	double getRadius() const { return radius; }
@@ -59,6 +61,7 @@ public:
 	Vector2d getPosition() const { return position; }
 	Vector2d getVelocity() const { return velocity; }
 	Vector2d getDesiredDirection() const { return desiredDirection; }	
+	Vector2d getDesiredVelocity() const { return desiredVelocity; }
 	
 	//guide用move関数
 	void move_g(std::vector<Agent>& guide, const std::vector<Agent>& evacuee, const Room room, const double stepTime);
