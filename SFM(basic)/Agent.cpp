@@ -10,10 +10,9 @@ Agent::Agent()
 {
 	mass = 80;			//エージェントの質量(kg)
 	radius = 0.25;		//エージェント半径(m)
-	desiredSpeed = 1.5;	//希望速さ(m/s)
-	R_ind = 1000;			//誘導者の誘導半径(m)
-	R_vis = 10;			//エージェントの視界半径(m)
-	isExitVisible = false;
+	desiredSpeed = 1;	//希望速さ(m/s)
+	R_ind = 0;			//誘導者の誘導半径(m)
+	R_vis = 3;			//エージェントの視界半径(m)
 
 	f_driv = Vector2d(0, 0);
 	f_ig = Vector2d(0, 0);
@@ -233,402 +232,464 @@ Vector2d Agent::drivingForce_g(const Room room)
 Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const std::vector<Agent>& evacuee)
 {
 	const double reactionTime = 0.5;										//反応時間(s)
-	//const double panicParameter = 0.8;									//パニックパラメータ（追従性の強さを表す）
+	const Vector2d O, destination = Vector2d(room.getRoom_size_x(), 0);		//目的地
 	int N_guide = guide.size();
 	int N_evacuee = evacuee.size();
-	const Vector2d O, destination = Vector2d(room.getRoom_size_x(), 0);		//目的地	
-	static Vector2d e_i;													//個人的希望方向
-	Vector2d f_i_0, f_i_r, f_driv;											//drivingForce
+	Vector2d f_driv;
 
-	//出口を認識できていないとき
-	if (isExitVisible == false)
+	double d_id = distance(position, destination);
+
+	//出口が見えるとき、出口を目指す
+	if (d_id <= R_vis)
 	{
-		isExitVisible = canSeeExit(room);
-	}
-
-	/* e_iの計算項 */
-	//目的地が視界に入っているとき or 出口を視認することができるようになったとき
-	if (isExitVisible == true)
-	{
-		e_i = unitVector(position, destination);
-
-		desiredDirection.x = e_i.x;
-		desiredDirection.y = e_i.y;
-		//desiredSpeed = calculateDesiredSpeed(guide, evacuee);
+		desiredDirection = unitVector(position, destination);
 		desiredVelocity = desiredSpeed * desiredDirection;
-		f_driv = (mass / reactionTime) * (desiredVelocity - velocity);
-		return f_driv;
 	}
 
-	else
+	//誘導者が1人以上いるとき
+	else if (N_guide > 0)
 	{
-		//誘導者が1人以上存在するとき
-		if (N_guide > 0)
+		vector<double> d_iL(N_guide);
+
+		//避難者と各誘導者の距離を計算
+		for (int i = 0; i < N_guide; ++i)
 		{
-			vector<double> d_ig(N_guide);
+			d_iL[i] = distance(position, guide[i].getPosition());
+		}
 
-			//避難者と各誘導者の距離を計算
-			for (int i = 0; i < N_guide; ++i)
-			{
-				d_ig[i] = distance(position, guide[i].getPosition());
-			}
+		//最も近い誘導者までの距離と誘導者番号を取得（参考：https://zenn.dev/reputeless/books/standard-cpp-for-competitive-programming/viewer/library-algorithm#1.5-%E9%85%8D%E5%88%97%E3%81%AE%E4%B8%AD%E3%81%8B%E3%82%89%E6%9C%80%E5%B0%8F%E3%81%AE%E8%A6%81%E7%B4%A0%E3%81%A8%E3%81%9D%E3%81%AE%E4%BD%8D%E7%BD%AE%E3%82%92%E5%BE%97%E3%82%8B）
+		auto it = min_element(d_iL.begin(), d_iL.end());
+		double d_iL_min = *it;									//誘導者までの距離
+		int nearestGuideNumber = distance(d_iL.begin(), it);	//誘導者番号
+		double R_ind = guide[nearestGuideNumber].getR_ind();	//誘導者の誘導半径
 
-			//最も近い誘導者までの距離と誘導者番号を取得（参考：https://zenn.dev/reputeless/books/standard-cpp-for-competitive-programming/viewer/library-algorithm#1.5-%E9%85%8D%E5%88%97%E3%81%AE%E4%B8%AD%E3%81%8B%E3%82%89%E6%9C%80%E5%B0%8F%E3%81%AE%E8%A6%81%E7%B4%A0%E3%81%A8%E3%81%9D%E3%81%AE%E4%BD%8D%E7%BD%AE%E3%82%92%E5%BE%97%E3%82%8B）
-			auto it = min_element(d_ig.begin(), d_ig.end());
-			double d_ig_min = *it;									//誘導者までの距離
-			int nearestGuideNumber = distance(d_ig.begin(), it);	//誘導者番号
-			double R_ind = guide[nearestGuideNumber].getR_ind();	//誘導者の誘導半径
+		//誘導者の誘導半径内にいるとき、誘導に従う
+		if (d_iL_min <= R_ind)
+		{
+			double rho_L = exp(-d_iL_min / R_vis);
+			Vector2d e_L = guide[nearestGuideNumber].getDesiredDirection();
+			Vector2d n_iL = unitVector(position, guide[nearestGuideNumber].getPosition());
 
-			//誘導者の誘導半径内にいるとき
-			if (d_ig_min <= R_ind)
-			{
-				const double beta = 0.6;
-				const double b1 = 0.05;
-				const double b2 = 0.05;
-				Vector2d f_i_0, f_i_r;
-
-				e_i = unitVector(position, guide[nearestGuideNumber].getPosition());
-
-				desiredDirection.x = e_i.x;
-				desiredDirection.y = e_i.y;
-				//desiredSpeed = calculateDesiredSpeed(guide, evacuee);
-				desiredVelocity = desiredSpeed * desiredDirection;
-
-				f_i_0 = (mass / reactionTime) * (desiredVelocity - velocity);
-				f_i_r = mass * (-b1 * (position - guide[nearestGuideNumber].getPosition()) - b2 * (velocity - guide[nearestGuideNumber].getVelocity()));
-
-				f_driv = beta * f_i_0 + f_i_r;
-
-				return f_driv;
-			}
-
-			//誘導者の誘導半径外にいるとき
-			else
-			{
-				//個人的希望方向ベクトルが零ベクトルのとき、希望方向をランダムに初期化する
-				if (e_i.x == 0 && e_i.y == 0)
-				{
-					std::random_device seed_gen;
-					std::default_random_engine engine(seed_gen());
-
-					// 0以上1.0未満の値を等確率で発生させる
-					std::uniform_real_distribution<> dist(0, 1.0);
-
-					double theta = 2 * PI * dist(engine);
-					Vector2d randomDirection = Vector2d(cos(theta), sin(theta));
-
-					e_i = unitVector(O, randomDirection);
-
-					desiredDirection.x = e_i.x;
-					desiredDirection.y = e_i.y;
-					//desiredSpeed = calculateDesiredSpeed(guide, evacuee);
-					desiredVelocity = desiredSpeed * desiredDirection;
-					f_driv = (mass / reactionTime) * (desiredVelocity - velocity);
-					return f_driv;
-				}						
-			}
+			desiredDirection = unitVector(O, rho_L * e_L + (1 - rho_L) * n_iL);
+			desiredVelocity = desiredSpeed * desiredDirection;
 		}
 	}
 
+	//出口も誘導者も見えないとき、周囲の避難者に追従するor壁に沿って移動する（壁が見えないときはランダム方向に前進する）
+	else
+	{
+		const double nu = 1;			//追従確率P(N)を特徴づけるパラメータν
+		const double sigma_th = 0;		//速度の方向の標準偏差の閾値
+
+		int N_aroundAgent = 0;
+		vector<double> theta;
+		Vector2d totalPosition, totalVelocity;
+
+		//自身の視界範囲内にいる誘導者の情報を参照
+		for (int i = 0; i < N_guide; ++i)
+		{
+			double d_ig = distance(position, guide[i].getPosition());
+
+			if (d_ig != 0 && d_ig <= R_vis)
+			{
+				N_aroundAgent++;
+
+				totalPosition = totalPosition + guide[i].getPosition();
+				totalVelocity = totalVelocity + guide[i].getVelocity();
+
+				double theta_i = atan2(guide[i].getVelocity().y, guide[i].getVelocity().x);
+				theta.push_back(theta_i);
+			}			
+		}
+
+		//自身の視界範囲内にいる避難者の情報を参照
+		for (int i = 0; i < N_evacuee; ++i)
+		{
+			double d_ij = distance(position, evacuee[i].getPosition());
+
+			if (d_ij != 0 && d_ij <= R_vis)
+			{
+				N_aroundAgent++;
+
+				totalPosition = totalPosition + evacuee[i].getPosition();
+				totalVelocity = totalVelocity + evacuee[i].getVelocity();
+
+				double theta_i = atan2(evacuee[i].getVelocity().y, evacuee[i].getVelocity().x);
+				theta.push_back(theta_i);
+			}
+		}
+
+		//周囲の避難者数に応じた追従確率を計算
+		double followingProbability = 1 - exp(-N_aroundAgent / nu);
+
+		//周囲にの避難者に追従するか判定するための乱数を生成
+		std::random_device seed_gen;
+		std::default_random_engine engine(seed_gen());
+		std::uniform_real_distribution<> dist(0, 1.0);	// 0以上1.0未満の値を等確率で発生させる
+		double p = dist(engine);
+
+		//追従するとき
+		if (p < followingProbability)
+		{
+			Vector2d centerOfGravity = totalPosition / N_aroundAgent;
+			double d_iG = distance(position, centerOfGravity);
+
+			double rho_f = exp(-d_iG / R_vis);
+			//double rho_f = 0.1;
+			Vector2d e_crowd = totalVelocity / N_aroundAgent;
+			Vector2d n_iG = unitVector(position, centerOfGravity);
+
+			desiredDirection = unitVector(O, rho_f * e_crowd + (1 - rho_f) * n_iG);
+			desiredVelocity = desiredSpeed * desiredDirection;
+		}
+
+		else
+		{
+			desiredDirection = O;
+			desiredVelocity = desiredSpeed * desiredDirection;
+		}
 
 
 
-	////目的地が視界に入っていないとき
-	//else
-	//{
-	//	//誘導者が1人以上存在するとき
-	//	if (N_guide > 0)
-	//	{
-	//		vector<double> d_ig(N_guide);
 
-	//		//避難者と各誘導者の距離を計算
-	//		for (int i = 0; i < N_guide; ++i)
-	//		{
-	//			d_ig[i] = distance(position, guide[i].getPosition());
-	//		}
 
-	//		//最も近い誘導者までの距離と誘導者番号を取得（参考：https://zenn.dev/reputeless/books/standard-cpp-for-competitive-programming/viewer/library-algorithm#1.5-%E9%85%8D%E5%88%97%E3%81%AE%E4%B8%AD%E3%81%8B%E3%82%89%E6%9C%80%E5%B0%8F%E3%81%AE%E8%A6%81%E7%B4%A0%E3%81%A8%E3%81%9D%E3%81%AE%E4%BD%8D%E7%BD%AE%E3%82%92%E5%BE%97%E3%82%8B）
-	//		auto it = min_element(d_ig.begin(), d_ig.end());
-	//		double d_ig_min = *it;									//誘導者までの距離
-	//		int nearestGuideNumber = distance(d_ig.begin(), it);	//誘導者番号
-	//		double R_ind = guide[nearestGuideNumber].getR_ind();	//誘導者の誘導半径
 
-	//		//誘導者の誘導半径内にいるとき
-	//		if (d_ig_min <= R_ind)
-	//		{
-	//			/*
-	//			[A social force evacuation model with the leadership effect, Hou, L et al.]より
-	//			double rho = exp(-d_ig_min / (2 * R_ind));
-	//			Vector2d e_g = unitVector(guide[nearestGuideNumber].getPosition(), target);
-	//			*/
-	//			
-	//			double xi = 3;		//誘導者に並走する成分と接近する成分を重み付けするためのパラメータ
-	//			double rho = exp(-d_ig_min / xi);
-	//			Vector2d e_g_i;
-	//			Vector2d e_g = guide[nearestGuideNumber].getDesiredDirection();
-	//			Vector2d n_ig = unitVector(guide[nearestGuideNumber].getPosition(), position);
 
-	//			e_g_i = rho * e_g - (1 - rho) * n_ig;
-	//			e_i = unitVector(O, e_g_i);
-	//		}
 
-	//		//誘導者の誘導半径外にいるとき
-	//		else
-	//		{
-	//			//個人的希望方向ベクトルが零ベクトルのとき、希望方向をランダムに初期化する
-	//			if (e_i.x == 0 && e_i.y == 0)
-	//			{
-	//				std::random_device seed_gen;
-	//				std::default_random_engine engine(seed_gen());
 
-	//				// 0以上1.0未満の値を等確率で発生させる
-	//				std::uniform_real_distribution<> dist(0, 1.0);
 
-	//				double theta = 2 * PI * dist(engine);
-	//				Vector2d randomDirection = Vector2d(cos(theta), sin(theta));
+		//if (N_aroundAgent != 0)
+		//{
+		//	Vector2d centerOfGravity = totalPosition / N_aroundAgent;
+		//	double d_iG = distance(position, centerOfGravity);
 
-	//				e_i = unitVector(O, randomDirection);
-	//			}
+		//	double rho_f = exp(-d_iG / R_vis);
+		//	//double rho_f = 0.1;
+		//	Vector2d e_crowd = totalVelocity / N_aroundAgent;
+		//	Vector2d n_iG = unitVector(position, centerOfGravity);
 
-	//			//個人的希望方向ベクトルが零ベクトルでないとき
-	//			else
-	//			{
-	//				const vector<vector<Vector2d>> wallCornerPoint = room.createWall();
-	//				const int N_wall = wallCornerPoint.size();		//壁の数(個)					
+		//	desiredDirection = unitVector(O, rho_f * e_crowd + (1 - rho_f) * n_iG);
+		//	desiredVelocity = desiredSpeed * desiredDirection;
+		//}
 
-	//				double d_iw = 0;								//自身と壁との距離(m)
-	//				static bool changeDirection = true;				//壁が2つ見えている時に1度だけ希望方向を変更するための判定用変数
-	//				vector<int> isVisibleWallNumber;				//視認できる壁の番号を格納する配列						
+		
 
-	//				for (int n = 0; n < N_wall; ++n)
-	//				{
-	//					Vector2d nearestPoint = getNearestPoint(wallCornerPoint[n][0], wallCornerPoint[n][1], position);
-	//					d_iw = distance(position, nearestPoint);
 
-	//					//自身の視界範囲内に壁が見えるとき
-	//					if (d_iw <= R_vis)
-	//					{
-	//						isVisibleWallNumber.push_back(n);
-	//					}
-	//				}
 
-	//				//見える壁がない時、個人的希望方向を上書きしない
-	//				if (isVisibleWallNumber.size() == 0)
-	//				{
 
-	//				}
 
-	//				//見える壁が１つの時、見える壁に沿って移動する
-	//				else if (isVisibleWallNumber.size() == 1)
-	//				{
-	//					Vector2d alongWallDirection = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
 
-	//					//個人的希望方向と壁に沿う単位ベクトルの内積を計算し、それまでの希望方向に沿った方向に進行する
-	//					if (dotProduct(desiredDirection, alongWallDirection) >= 0)
-	//					{
-	//						e_i.x = alongWallDirection.x;
-	//						e_i.y = alongWallDirection.y;
-	//					}
-	//					else
-	//					{
-	//						e_i.x = -alongWallDirection.x;
-	//						e_i.y = -alongWallDirection.y;
-	//					}
 
-	//					changeDirection = true;		//壁が2つ見えた時に希望方向を切り替えられるようにフラグをONにする
-	//				}
+		
 
-	//				//見える壁が２つの時、沿う壁を変更する
-	//				else if (isVisibleWallNumber.size() == 2)
-	//				{
-	//					//個人的希望方向変更フラグがONの時
-	//					if (changeDirection == true)
-	//					{
-	//						Vector2d alongWallDirection1 = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
-	//						Vector2d alongWallDirection2 = unitVector(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1]);
 
-	//						//壁１が進行方向に存在するとき、壁２から遠ざかる
-	//						if (dotProduct(desiredDirection, alongWallDirection1) == 0)
-	//						{
-	//							Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1], position);
-	//							Vector2d n_iw = unitVector(nearestPoint, position);
 
-	//							e_i.x = n_iw.x;
-	//							e_i.y = n_iw.y;
-	//						}
-	//						//壁２が進行方向に存在するとき、壁１から遠ざかる
-	//						else if (dotProduct(desiredDirection, alongWallDirection2) == 0)
-	//						{
-	//							Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1], position);
-	//							Vector2d n_iw = unitVector(nearestPoint, position);
+		
 
-	//							e_i.x = n_iw.x;
-	//							e_i.y = n_iw.y;
-	//						}
 
-	//						isVisibleWallNumber.clear();		//見えている壁の記憶を破棄する
-	//						changeDirection = false;			//個人的希望方向変更フラグをOFFにする
-	//					}
-	//				}
-	//			}		
-	//		}
-	//	}
 
-	//	//誘導者が存在しないとき
-	//	else
-	//	{
-	//		//個人的希望方向ベクトルが零ベクトルのとき、希望方向をランダムに初期化する
-	//		if (e_i.x == 0 && e_i.y == 0)
-	//		{
-	//			std::random_device seed_gen;
-	//			std::default_random_engine engine(seed_gen());
+		////目的地が視界に入っていないとき
+		//else
+		//{
+		//	//誘導者が1人以上存在するとき
+		//	if (N_guide > 0)
+		//	{
+		//		vector<double> d_ig(N_guide);
 
-	//			// 0以上1.0未満の値を等確率で発生させる
-	//			std::uniform_real_distribution<> dist(0, 1.0);
+		//		//避難者と各誘導者の距離を計算
+		//		for (int i = 0; i < N_guide; ++i)
+		//		{
+		//			d_ig[i] = distance(position, guide[i].getPosition());
+		//		}
 
-	//			double theta = 2 * PI * dist(engine);
-	//			Vector2d randomDirection = Vector2d(cos(theta), sin(theta));
+		//		//最も近い誘導者までの距離と誘導者番号を取得（参考：https://zenn.dev/reputeless/books/standard-cpp-for-competitive-programming/viewer/library-algorithm#1.5-%E9%85%8D%E5%88%97%E3%81%AE%E4%B8%AD%E3%81%8B%E3%82%89%E6%9C%80%E5%B0%8F%E3%81%AE%E8%A6%81%E7%B4%A0%E3%81%A8%E3%81%9D%E3%81%AE%E4%BD%8D%E7%BD%AE%E3%82%92%E5%BE%97%E3%82%8B）
+		//		auto it = min_element(d_ig.begin(), d_ig.end());
+		//		double d_ig_min = *it;									//誘導者までの距離
+		//		int nearestGuideNumber = distance(d_ig.begin(), it);	//誘導者番号
+		//		double R_ind = guide[nearestGuideNumber].getR_ind();	//誘導者の誘導半径
 
-	//			e_i = unitVector(O, randomDirection);
-	//		}
+		//		//誘導者の誘導半径内にいるとき
+		//		if (d_ig_min <= R_ind)
+		//		{
+		//			/*
+		//			[A social force evacuation model with the leadership effect, Hou, L et al.]より
+		//			double rho = exp(-d_ig_min / (2 * R_ind));
+		//			Vector2d e_g = unitVector(guide[nearestGuideNumber].getPosition(), target);
+		//			*/
+		//			
+		//			double xi = 3;		//誘導者に並走する成分と接近する成分を重み付けするためのパラメータ
+		//			double rho = exp(-d_ig_min / xi);
+		//			Vector2d e_g_i;
+		//			Vector2d e_g = guide[nearestGuideNumber].getDesiredDirection();
+		//			Vector2d n_ig = unitVector(guide[nearestGuideNumber].getPosition(), position);
 
-	//		//個人的希望方向ベクトルが零ベクトルでないとき
-	//		else
-	//		{
-	//			const vector<vector<Vector2d>> wallCornerPoint = room.createWall();
-	//			const int N_wall = wallCornerPoint.size();		//壁の数(個)					
+		//			e_g_i = rho * e_g - (1 - rho) * n_ig;
+		//			e_i = unitVector(O, e_g_i);
+		//		}
 
-	//			double d_iw = 0;								//自身と壁との距離(m)
-	//			static bool changeDirection = true;				//壁が2つ見えている時に1度だけ希望方向を変更するための判定用変数
-	//			vector<int> isVisibleWallNumber;				//視認できる壁の番号を格納する配列						
+		//		//誘導者の誘導半径外にいるとき
+		//		else
+		//		{
+		//			//個人的希望方向ベクトルが零ベクトルのとき、希望方向をランダムに初期化する
+		//			if (e_i.x == 0 && e_i.y == 0)
+		//			{
+		//				std::random_device seed_gen;
+		//				std::default_random_engine engine(seed_gen());
 
-	//			for (int n = 0; n < N_wall; ++n)
-	//			{
-	//				Vector2d nearestPoint = getNearestPoint(wallCornerPoint[n][0], wallCornerPoint[n][1], position);
-	//				d_iw = distance(position, nearestPoint);
+		//				// 0以上1.0未満の値を等確率で発生させる
+		//				std::uniform_real_distribution<> dist(0, 1.0);
 
-	//				//自身の視界範囲内に壁が見えるとき
-	//				if (d_iw <= R_vis)
-	//				{
-	//					isVisibleWallNumber.push_back(n);
-	//				}
-	//			}
+		//				double theta = 2 * PI * dist(engine);
+		//				Vector2d randomDirection = Vector2d(cos(theta), sin(theta));
 
-	//			//見える壁がない時、個人的希望方向を上書きしない
-	//			if (isVisibleWallNumber.size() == 0)
-	//			{
+		//				e_i = unitVector(O, randomDirection);
+		//			}
 
-	//			}
+		//			//個人的希望方向ベクトルが零ベクトルでないとき
+		//			else
+		//			{
+		//				const vector<vector<Vector2d>> wallCornerPoint = room.createWall();
+		//				const int N_wall = wallCornerPoint.size();		//壁の数(個)					
 
-	//			//見える壁が１つの時、見える壁に沿って移動する
-	//			else if (isVisibleWallNumber.size() == 1)
-	//			{
-	//				Vector2d alongWallDirection = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
+		//				double d_iw = 0;								//自身と壁との距離(m)
+		//				static bool changeDirection = true;				//壁が2つ見えている時に1度だけ希望方向を変更するための判定用変数
+		//				vector<int> isVisibleWallNumber;				//視認できる壁の番号を格納する配列						
 
-	//				//個人的希望方向と壁に沿う単位ベクトルの内積を計算し、それまでの希望方向に沿った方向に進行する
-	//				if (dotProduct(desiredDirection, alongWallDirection) >= 0)
-	//				{
-	//					e_i.x = alongWallDirection.x;
-	//					e_i.y = alongWallDirection.y;
-	//				}
-	//				else
-	//				{
-	//					e_i.x = -alongWallDirection.x;
-	//					e_i.y = -alongWallDirection.y;
-	//				}
+		//				for (int n = 0; n < N_wall; ++n)
+		//				{
+		//					Vector2d nearestPoint = getNearestPoint(wallCornerPoint[n][0], wallCornerPoint[n][1], position);
+		//					d_iw = distance(position, nearestPoint);
 
-	//				changeDirection = true;		//壁が2つ見えた時に希望方向を切り替えられるようにフラグをONにする
-	//			}
+		//					//自身の視界範囲内に壁が見えるとき
+		//					if (d_iw <= R_vis)
+		//					{
+		//						isVisibleWallNumber.push_back(n);
+		//					}
+		//				}
 
-	//			//見える壁が２つの時、沿う壁を変更する
-	//			else if (isVisibleWallNumber.size() == 2)
-	//			{
-	//				//個人的希望方向変更フラグがONの時
-	//				if (changeDirection == true)
-	//				{
-	//					Vector2d alongWallDirection1 = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
-	//					Vector2d alongWallDirection2 = unitVector(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1]);
+		//				//見える壁がない時、個人的希望方向を上書きしない
+		//				if (isVisibleWallNumber.size() == 0)
+		//				{
 
-	//					//壁１が進行方向に存在するとき、壁２から遠ざかる
-	//					if (dotProduct(desiredDirection, alongWallDirection1) == 0)
-	//					{
-	//						Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1], position);
-	//						Vector2d n_iw = unitVector(nearestPoint, position);
+		//				}
 
-	//						e_i.x = n_iw.x;
-	//						e_i.y = n_iw.y;
-	//					}
-	//					//壁２が進行方向に存在するとき、壁１から遠ざかる
-	//					else if (dotProduct(desiredDirection, alongWallDirection2) == 0)
-	//					{
-	//						Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1], position);
-	//						Vector2d n_iw = unitVector(nearestPoint, position);
+		//				//見える壁が１つの時、見える壁に沿って移動する
+		//				else if (isVisibleWallNumber.size() == 1)
+		//				{
+		//					Vector2d alongWallDirection = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
 
-	//						e_i.x = n_iw.x;
-	//						e_i.y = n_iw.y;
-	//					}
+		//					//個人的希望方向と壁に沿う単位ベクトルの内積を計算し、それまでの希望方向に沿った方向に進行する
+		//					if (dotProduct(desiredDirection, alongWallDirection) >= 0)
+		//					{
+		//						e_i.x = alongWallDirection.x;
+		//						e_i.y = alongWallDirection.y;
+		//					}
+		//					else
+		//					{
+		//						e_i.x = -alongWallDirection.x;
+		//						e_i.y = -alongWallDirection.y;
+		//					}
 
-	//					isVisibleWallNumber.clear();		//見えている壁の記憶を破棄する
-	//					changeDirection = false;			//個人的希望方向変更フラグをOFFにする
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
+		//					changeDirection = true;		//壁が2つ見えた時に希望方向を切り替えられるようにフラグをONにする
+		//				}
 
-	///* e_j_iの計算項 */
-	//const double lambda = 1;	//視界異方性の強さを表すパラメータ
-	//int N_aroundAgent = 0;
-	//Vector2d e_total;
+		//				//見える壁が２つの時、沿う壁を変更する
+		//				else if (isVisibleWallNumber.size() == 2)
+		//				{
+		//					//個人的希望方向変更フラグがONの時
+		//					if (changeDirection == true)
+		//					{
+		//						Vector2d alongWallDirection1 = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
+		//						Vector2d alongWallDirection2 = unitVector(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1]);
 
-	////自身の視界範囲内にいる誘導者の数え上げ
-	//for (int i = 0; i < N_guide; ++i)
-	//{
-	//	double d_ig = distance(position, guide[i].getPosition());
+		//						//壁１が進行方向に存在するとき、壁２から遠ざかる
+		//						if (dotProduct(desiredDirection, alongWallDirection1) == 0)
+		//						{
+		//							Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1], position);
+		//							Vector2d n_iw = unitVector(nearestPoint, position);
 
-	//	if (d_ig != 0 && d_ig <= R_vis)
-	//	{
-	//		N_aroundAgent++;
+		//							e_i.x = n_iw.x;
+		//							e_i.y = n_iw.y;
+		//						}
+		//						//壁２が進行方向に存在するとき、壁１から遠ざかる
+		//						else if (dotProduct(desiredDirection, alongWallDirection2) == 0)
+		//						{
+		//							Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1], position);
+		//							Vector2d n_iw = unitVector(nearestPoint, position);
 
-	//		//視界異方性係数の計算
-	//		Vector2d n_gi = unitVector(position, guide[i].getPosition());	//i→g方向の単位ベクトル
-	//		double cos_phi = dotProduct(desiredDirection, n_gi);
-	//		double anisotropy_coef = lambda + (1 - lambda) * ((1 + cos_phi) / 2);
+		//							e_i.x = n_iw.x;
+		//							e_i.y = n_iw.y;
+		//						}
 
-	//		e_total = e_total + anisotropy_coef * guide[i].getVelocity();
-	//	}
-	//}
+		//						isVisibleWallNumber.clear();		//見えている壁の記憶を破棄する
+		//						changeDirection = false;			//個人的希望方向変更フラグをOFFにする
+		//					}
+		//				}
+		//			}		
+		//		}
+		//	}
 
-	////自身の視界範囲内にいる避難者の数え上げ
-	//for (int i = 0; i < N_evacuee; ++i)
-	//{
-	//	double d_ij = distance(position, evacuee[i].getPosition());
+		//	//誘導者が存在しないとき
+		//	else
+		//	{
+		//		//個人的希望方向ベクトルが零ベクトルのとき、希望方向をランダムに初期化する
+		//		if (e_i.x == 0 && e_i.y == 0)
+		//		{
+		//			std::random_device seed_gen;
+		//			std::default_random_engine engine(seed_gen());
 
-	//	if (d_ij != 0 && d_ij <= R_vis)
-	//	{
-	//		N_aroundAgent++;
+		//			// 0以上1.0未満の値を等確率で発生させる
+		//			std::uniform_real_distribution<> dist(0, 1.0);
 
-	//		//視界異方性係数の計算
-	//		Vector2d n_ji = unitVector(position, evacuee[i].getPosition());	//i→j方向の単位ベクトル
-	//		double cos_phi = dotProduct(desiredDirection, n_ji);
-	//		double anisotropy_coef = lambda + (1 - lambda) * ((1 + cos_phi) / 2);
+		//			double theta = 2 * PI * dist(engine);
+		//			Vector2d randomDirection = Vector2d(cos(theta), sin(theta));
 
-	//		e_total = e_total + anisotropy_coef * evacuee[i].getVelocity();
-	//	}
-	//}
+		//			e_i = unitVector(O, randomDirection);
+		//		}
 
-	//if (N_aroundAgent != 0)
-	//{
-	//	e_j_i = e_total / N_aroundAgent;
-	//}	
+		//		//個人的希望方向ベクトルが零ベクトルでないとき
+		//		else
+		//		{
+		//			const vector<vector<Vector2d>> wallCornerPoint = room.createWall();
+		//			const int N_wall = wallCornerPoint.size();		//壁の数(個)					
 
-	///* drivingForceの計算項 */
-	//desiredDirection = unitVector(O, (1 - panicParameter) * e_i + panicParameter * e_j_i);	//e_j_iが0かつpanicParameterが1の時、0除算が発生
-	//desiredSpeed = calculateDesiredSpeed(guide, evacuee);
-	//desiredVelocity = desiredSpeed * desiredDirection;
-	//f_driv = (mass / reactionTime) * (desiredVelocity - velocity);
+		//			double d_iw = 0;								//自身と壁との距離(m)
+		//			static bool changeDirection = true;				//壁が2つ見えている時に1度だけ希望方向を変更するための判定用変数
+		//			vector<int> isVisibleWallNumber;				//視認できる壁の番号を格納する配列						
 
-	//return f_driv;
+		//			for (int n = 0; n < N_wall; ++n)
+		//			{
+		//				Vector2d nearestPoint = getNearestPoint(wallCornerPoint[n][0], wallCornerPoint[n][1], position);
+		//				d_iw = distance(position, nearestPoint);
+
+		//				//自身の視界範囲内に壁が見えるとき
+		//				if (d_iw <= R_vis)
+		//				{
+		//					isVisibleWallNumber.push_back(n);
+		//				}
+		//			}
+
+		//			//見える壁がない時、個人的希望方向を上書きしない
+		//			if (isVisibleWallNumber.size() == 0)
+		//			{
+
+		//			}
+
+		//			//見える壁が１つの時、見える壁に沿って移動する
+		//			else if (isVisibleWallNumber.size() == 1)
+		//			{
+		//				Vector2d alongWallDirection = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
+
+		//				//個人的希望方向と壁に沿う単位ベクトルの内積を計算し、それまでの希望方向に沿った方向に進行する
+		//				if (dotProduct(desiredDirection, alongWallDirection) >= 0)
+		//				{
+		//					e_i.x = alongWallDirection.x;
+		//					e_i.y = alongWallDirection.y;
+		//				}
+		//				else
+		//				{
+		//					e_i.x = -alongWallDirection.x;
+		//					e_i.y = -alongWallDirection.y;
+		//				}
+
+		//				changeDirection = true;		//壁が2つ見えた時に希望方向を切り替えられるようにフラグをONにする
+		//			}
+
+		//			//見える壁が２つの時、沿う壁を変更する
+		//			else if (isVisibleWallNumber.size() == 2)
+		//			{
+		//				//個人的希望方向変更フラグがONの時
+		//				if (changeDirection == true)
+		//				{
+		//					Vector2d alongWallDirection1 = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
+		//					Vector2d alongWallDirection2 = unitVector(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1]);
+
+		//					//壁１が進行方向に存在するとき、壁２から遠ざかる
+		//					if (dotProduct(desiredDirection, alongWallDirection1) == 0)
+		//					{
+		//						Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1], position);
+		//						Vector2d n_iw = unitVector(nearestPoint, position);
+
+		//						e_i.x = n_iw.x;
+		//						e_i.y = n_iw.y;
+		//					}
+		//					//壁２が進行方向に存在するとき、壁１から遠ざかる
+		//					else if (dotProduct(desiredDirection, alongWallDirection2) == 0)
+		//					{
+		//						Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1], position);
+		//						Vector2d n_iw = unitVector(nearestPoint, position);
+
+		//						e_i.x = n_iw.x;
+		//						e_i.y = n_iw.y;
+		//					}
+
+		//					isVisibleWallNumber.clear();		//見えている壁の記憶を破棄する
+		//					changeDirection = false;			//個人的希望方向変更フラグをOFFにする
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
+
+		///* e_j_iの計算項 */
+		//const double lambda = 1;	//視界異方性の強さを表すパラメータ
+		//int N_aroundAgent = 0;
+		//Vector2d e_total;
+
+		////自身の視界範囲内にいる誘導者の数え上げ
+		//for (int i = 0; i < N_guide; ++i)
+		//{
+		//	double d_ig = distance(position, guide[i].getPosition());
+
+		//	if (d_ig != 0 && d_ig <= R_vis)
+		//	{
+		//		N_aroundAgent++;
+
+		//		//視界異方性係数の計算
+		//		Vector2d n_gi = unitVector(position, guide[i].getPosition());	//i→g方向の単位ベクトル
+		//		double cos_phi = dotProduct(desiredDirection, n_gi);
+		//		double anisotropy_coef = lambda + (1 - lambda) * ((1 + cos_phi) / 2);
+
+		//		e_total = e_total + anisotropy_coef * guide[i].getVelocity();
+		//	}
+		//}
+
+		////自身の視界範囲内にいる避難者の数え上げ
+		//for (int i = 0; i < N_evacuee; ++i)
+		//{
+		//	double d_ij = distance(position, evacuee[i].getPosition());
+
+		//	if (d_ij != 0 && d_ij <= R_vis)
+		//	{
+		//		N_aroundAgent++;
+
+		//		//視界異方性係数の計算
+		//		Vector2d n_ji = unitVector(position, evacuee[i].getPosition());	//i→j方向の単位ベクトル
+		//		double cos_phi = dotProduct(desiredDirection, n_ji);
+		//		double anisotropy_coef = lambda + (1 - lambda) * ((1 + cos_phi) / 2);
+
+		//		e_total = e_total + anisotropy_coef * evacuee[i].getVelocity();
+		//	}
+		//}
+
+		//if (N_aroundAgent != 0)
+		//{
+		//	e_j_i = e_total / N_aroundAgent;
+		//}	
+
+		///* drivingForceの計算項 */
+		//desiredDirection = unitVector(O, (1 - panicParameter) * e_i + panicParameter * e_j_i);	//e_j_iが0かつpanicParameterが1の時、0除算が発生
+		//desiredSpeed = calculateDesiredSpeed(guide, evacuee);
+		//desiredVelocity = desiredSpeed * desiredDirection;
+		//f_driv = (mass / reactionTime) * (desiredVelocity - velocity);
+
+		//return f_driv;
+	}
+
+	f_driv = (mass / reactionTime) * (desiredVelocity - velocity);
+
+	return f_driv;
+
 }
 
 Vector2d Agent::agentInteractForce(const std::vector<Agent>& agents)
@@ -798,7 +859,7 @@ void setInitialPosition_g(const Room room, std::vector<Agent>& guide)
 	const double room_size_y = room.getRoom_size_y();
 	const int N_guide = guide.size();
 
-	//誘導者の初期位置の候補
+	//誘導者の初期位置の候補	
 	const Vector2d p1 = Vector2d(room_size_x / 4, room_size_y / 4);
 	const Vector2d p2 = Vector2d(room_size_x / 4, 0);
 	const Vector2d p3 = Vector2d(room_size_x / 4, -room_size_y / 4);
@@ -811,15 +872,17 @@ void setInitialPosition_g(const Room room, std::vector<Agent>& guide)
 	const Vector2d outOfRoom = Vector2d(1000000, 0);
 
 	//Yang(2014)再現用初期位置
-	const Vector2d p_Yang_2014_1 = Vector2d(3, (-room_size_y / 2) + 3);
-	const Vector2d p_Yang_2014_2 = Vector2d(12, (-room_size_y / 2) + 12);
+	//const Vector2d p_Yang_2014_1 = Vector2d(3, (-room_size_y / 2) + 3);
+	//const Vector2d p_Yang_2014_2 = Vector2d(12, (-room_size_y / 2) + 12);
 
 	for (int i = 0; i < N_guide; ++i)
 	{
+		const Vector2d p_deepCenter = Vector2d(guide[0].getRadius(), 0);
+
 		switch (i)	//誘導者毎初期配置を指定する
 		{
 		case 0:
-			guide[i].setPosition(p_Yang_2014_2);	//部屋の左壁中央
+			guide[i].setPosition(outOfRoom);	//部屋の左壁中央
 			break;
 		case 1:
 			guide[i].setPosition(p3);
@@ -856,13 +919,9 @@ void setInitialPosition_e(const Room room, const std::vector<Agent>& guide, std:
 		double r_i = evacuee[i].getRadius();
 
 		// r_i 以上 room_size_x - r_i 未満の実数を一様乱数で発生させる
-		//std::uniform_real_distribution<> dist_x(r_i, room_size_x - r_i);
+		std::uniform_real_distribution<> dist_x(r_i, room_size_x - r_i);
 		// (-room_size_y / 2) + r_i 以上 (room_size_y / 2) - r_i 未満の実数を一様乱数で発生させる
-		//std::uniform_real_distribution<> dist_y((-room_size_y / 2) + r_i, (room_size_y / 2) - r_i);
-
-		// Yang(2014)再現用
-		std::uniform_real_distribution<> dist_x(r_i, 15 - r_i);
-		std::uniform_real_distribution<> dist_y((-room_size_y / 2) + r_i, -15 - r_i);
+		std::uniform_real_distribution<> dist_y((-room_size_y / 2) + r_i, (room_size_y / 2) - r_i);
 
 		evacuee[i].setPosition(Vector2d(dist_x(engine), dist_y(engine)));
 
@@ -931,4 +990,27 @@ void removeAgent(std::vector<Agent>& agents, Room roomData)
 {
 	double exitPosition_x = roomData.getRoom_size_x();
 	erase_if(agents, [exitPosition_x](Agent agent) {return agent.getPosition().x >= exitPosition_x; });
+}
+
+double calculationSD(const std::vector<double>& data)
+{
+	int N_data = data.size();
+	double data_mean = 0;
+	double temp = 0;
+
+	for (int i = 0; i < N_data; ++i)
+	{
+		temp += data[i];
+	}
+
+	data_mean = temp / N_data;
+
+	temp = 0;
+
+	for (int i = 0; i < N_data; ++i)
+	{
+		temp += (data[i] - data_mean) * (data[i] - data_mean);
+	}	
+
+	return sqrt(temp / N_data);
 }

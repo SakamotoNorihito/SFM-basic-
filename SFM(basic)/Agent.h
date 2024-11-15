@@ -13,7 +13,6 @@ private:
 	double desiredSpeed;
 	double R_ind;
 	double R_vis;
-	bool isExitVisible;
 
 	Vector2d f_driv;
 	Vector2d f_ig;
@@ -29,7 +28,7 @@ private:
 	double calculateDesiredSpeed(const std::vector<Agent>& guide, const std::vector<Agent>& evacuee);
 	//出口が見えるか判定する関数
 	bool canSeeExit(const Room room);
-		//guide用drivingForce
+	//guide用drivingForce
 	Vector2d drivingForce_g(const Room room);
 	//evacuee用drivingForce
 	Vector2d drivingForce_e(const Room room, const std::vector<Agent>& guide, const std::vector<Agent>& evacuee);
@@ -70,13 +69,13 @@ public:
 };
 
 void setInitialPosition(std::vector<Agent>& agents, Room roomData);
-
 //guide用初期配置関数
 void setInitialPosition_g(const Room room, std::vector<Agent>& guide);
 //evacuee用初期配置関数
 void setInitialPosition_e(const Room room, const std::vector<Agent>& guide, std::vector<Agent>& evacuee);
-
 void removeAgent(std::vector<Agent>& agents, Room roomData);
+
+double calculationSD(const std::vector<double>& data);
 
 #endif
 
