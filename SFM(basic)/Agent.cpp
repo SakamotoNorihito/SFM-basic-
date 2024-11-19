@@ -1,5 +1,6 @@
 #include<vector>
 #include<random>
+#include<numeric>
 #include"Agent.h"
 using namespace std;
 
@@ -11,8 +12,8 @@ Agent::Agent()
 	mass = 80;			//エージェントの質量(kg)
 	radius = 0.25;		//エージェント半径(m)
 	desiredSpeed = 1;	//希望速さ(m/s)
-	R_ind = 0;			//誘導者の誘導半径(m)
-	R_vis = 3;			//エージェントの視界半径(m)
+	R_ind = 5;			//誘導者の誘導半径(m)
+	R_vis = 1;			//エージェントの視界半径(m)
 
 	f_driv = Vector2d(0, 0);
 	f_ig = Vector2d(0, 0);
@@ -298,7 +299,7 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 				totalVelocity = totalVelocity + guide[i].getVelocity();
 
 				double theta_i = atan2(guide[i].getVelocity().y, guide[i].getVelocity().x);
-				theta.push_back(theta_i);
+				theta.emplace_back(theta_i);
 			}			
 		}
 
@@ -315,7 +316,7 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 				totalVelocity = totalVelocity + evacuee[i].getVelocity();
 
 				double theta_i = atan2(evacuee[i].getVelocity().y, evacuee[i].getVelocity().x);
-				theta.push_back(theta_i);
+				theta.emplace_back(theta_i);
 			}
 		}
 
@@ -328,8 +329,11 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 		std::uniform_real_distribution<> dist(0, 1.0);	// 0以上1.0未満の値を等確率で発生させる
 		double p = dist(engine);
 
+		//速度の方向の標準偏差を計算
+		double sigma_theta = calculationSD(theta);
+
 		//追従するとき
-		if (p < followingProbability)
+		if (sigma_theta <= sigma_th)
 		{
 			Vector2d centerOfGravity = totalPosition / N_aroundAgent;
 			double d_iG = distance(position, centerOfGravity);
@@ -882,7 +886,7 @@ void setInitialPosition_g(const Room room, std::vector<Agent>& guide)
 		switch (i)	//誘導者毎初期配置を指定する
 		{
 		case 0:
-			guide[i].setPosition(outOfRoom);	//部屋の左壁中央
+			guide[i].setPosition(p_deepCenter);	//部屋の左壁中央
 			break;
 		case 1:
 			guide[i].setPosition(p3);
@@ -1003,6 +1007,7 @@ double calculationSD(const std::vector<double>& data)
 		temp += data[i];
 	}
 
+	//N_data = 0 を考慮した方がよい？
 	data_mean = temp / N_data;
 
 	temp = 0;
