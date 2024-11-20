@@ -16,9 +16,9 @@ const double room_size_y = 10;
 const double width_exit = 1;
 
 //シミュレーション条件
-const int N_sample = 3;             //サンプル数
+const int N_sample = 5;             //サンプル数
 const int N_guide = 1;              //初期誘導者数
-const int N_evacuee = 100;          //初期避難者数
+const int N_evacuee = 1;          //初期避難者数
 const double stepTime = 0.005;      //時間幅（初期値：0.005[s]）
 const double coeff_dataOutPut = 1;   //データ出力の時間幅を決定する係数（1…1/1(= 1)秒、10…1/10(= 0.1)秒、100…1/100(= 0.01)秒）
 const int N_step = 20200;           //シミュレーションステップ数(100[s])
@@ -281,6 +281,13 @@ int main()
                 ofs << "\n";
             }
         }
+
+        //シミュレーションが終了しても全避難者が避難完了できなかった場合、その時点での時間を記録する
+        if (recordLastEvacueeEscapeTimeFlag == true)
+        {
+            recordLastEvacueeEscapeTime[N] = N_step * stepTime - 1.0;
+        }
+
         ofs.close();
     }
 
@@ -314,6 +321,12 @@ int main()
 
     cout << "\n" << "平均避難時間" << "," << "標準偏差" << "\n" << ave_time << "," << sd_time << "\n";
     ofs << "\n" << "平均避難時間" << "," << "標準偏差" << "\n" << ave_time << "," << sd_time << "\n";
+
+    for (int i = 0; i < recordLastEvacueeEscapeTime.size(); ++i)
+    {
+        cout << recordLastEvacueeEscapeTime[i] << "\n";
+        ofs << recordLastEvacueeEscapeTime[i] << "\n";
+    }
 
     ofs.close();
     
