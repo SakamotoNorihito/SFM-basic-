@@ -12,8 +12,8 @@ Agent::Agent()
 	mass = 80;			//エージェントの質量(kg)
 	radius = 0.25;		//エージェント半径(m)
 	desiredSpeed = 1;	//希望速さ(m/s)
-	R_ind = 5;			//誘導者の誘導半径(m)
-	R_vis = 1;			//エージェントの視界半径(m)
+	R_ind = 0;			//誘導者の誘導半径(m)
+	R_vis = 1000;			//エージェントの視界半径(m)
 
 	f_driv = Vector2d(0, 0);
 	f_ig = Vector2d(0, 0);
@@ -886,7 +886,7 @@ void setInitialPosition_g(const Room room, std::vector<Agent>& guide)
 		switch (i)	//誘導者毎初期配置を指定する
 		{
 		case 0:
-			guide[i].setPosition(p_deepCenter);	//部屋の左壁中央
+			guide[i].setPosition(outOfRoom);	//部屋の左壁中央
 			break;
 		case 1:
 			guide[i].setPosition(p3);

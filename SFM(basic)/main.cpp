@@ -16,7 +16,7 @@ const double room_size_y = 10;
 const double width_exit = 1;
 
 //シミュレーション条件
-const int N_sample = 1;             //サンプル数
+const int N_sample = 3;             //サンプル数
 const int N_guide = 1;              //初期誘導者数
 const int N_evacuee = 100;          //初期避難者数
 const double stepTime = 0.005;      //時間幅（初期値：0.005[s]）
@@ -25,6 +25,8 @@ const int N_step = 20200;           //シミュレーションステップ数(100[s])
 //避難時間 = 時間幅 × シミュレーションステップ数
 
 int countEscapeCompleteNumber(const int N_initial, vector<Agent>& agents);
+double calculateAverage(const vector<double>& data);
+double calculateStandardDeviation(const vector<double>& data);
 vector<double> calculateAverage(const vector<vector<int>>& data);
 vector<double> calculateStandardDeviation(const vector<vector<int>>& data);
 
@@ -42,9 +44,12 @@ int main()
 
     //int型にキャストすべき？
     vector<vector<int>> recordEscapeCompleteNumber(N_sample, vector<int>(N_step * stepTime));
+    vector<double> recordLastEvacueeEscapeTime(N_sample);    
 
     for (int N = 0; N < N_sample; ++N) 
     {
+        bool recordLastEvacueeEscapeTimeFlag = true;     //最後の避難者が避難完了した時間を記録するためのフラグ
+
         //各サンプル毎にデータを出力
         std::string fname("simulation(basic)" + toString(N) + ".csv");
         std::ofstream ofs(fname.c_str());
@@ -159,6 +164,13 @@ int main()
                 int N_escapeCompleteEvacuee = countEscapeCompleteNumber(N_evacuee, evacuee);
                 //避難完了者数の記録（添え字１…サンプル数、添え字２…秒数）
                 recordEscapeCompleteNumber[N][n * stepTime] = N_escapeCompleteEvacuee;
+
+                //最後の避難者が避難完了した時間を記録
+                if (recordLastEvacueeEscapeTimeFlag == true && N_escapeCompleteEvacuee == N_evacuee)
+                {
+                    recordLastEvacueeEscapeTime[N] = n * stepTime;
+                    recordLastEvacueeEscapeTimeFlag = false;
+                }
 
                 cout << n * stepTime << "," << N_escapeCompleteEvacuee << ",";
                 ofs << n * stepTime << "," << N_escapeCompleteEvacuee << ",";
@@ -285,6 +297,9 @@ int main()
     vector<double> ave = calculateAverage(recordEscapeCompleteNumber);
     vector<double> sd = calculateStandardDeviation(recordEscapeCompleteNumber);
 
+    double ave_time = calculateAverage(recordLastEvacueeEscapeTime);
+    double sd_time = calculateStandardDeviation(recordLastEvacueeEscapeTime);
+
     int N_sample = recordEscapeCompleteNumber.size();
     int N_record = recordEscapeCompleteNumber.at(0).size();
 
@@ -296,6 +311,9 @@ int main()
         cout << i << "," << ave[i] << "," << sd[i] << "\n";
         ofs << i << "," << ave[i] << "," << sd[i] << "\n";
     }
+
+    cout << "\n" << "平均避難時間" << "," << "標準偏差" << "\n" << ave_time << "," << sd_time << "\n";
+    ofs << "\n" << "平均避難時間" << "," << "標準偏差" << "\n" << ave_time << "," << sd_time << "\n";
 
     ofs.close();
     
@@ -310,6 +328,34 @@ int countEscapeCompleteNumber(const int N_initialNumber, vector<Agent>& agents)
     int N_escapeCurrent = agents.size();
 
     return N_initialNumber - N_escapeCurrent;
+}
+
+double calculateAverage(const vector<double>& data)
+{
+    int N_sample = data.size();
+    double temp = 0;
+
+    for (int i = 0; i < N_sample; ++i)
+    {
+        temp += data[i];
+    }
+
+    return temp / N_sample;    
+}
+
+double calculateStandardDeviation(const vector<double>& data)
+{
+    int N_sample = data.size();
+    double temp = 0;
+
+    double ave = calculateAverage(data);
+
+    for (int i = 0; i < N_sample; ++i)
+    {
+        temp += (data[i] - ave) * (data[i] - ave);
+    }
+
+    return sqrt(temp / N_sample);
 }
 
 vector<double> calculateAverage(const vector<vector<int>>& data)
