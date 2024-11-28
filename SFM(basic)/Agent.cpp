@@ -13,7 +13,7 @@ Agent::Agent()
 	radius = 0.25;		//エージェント半径(m)
 	desiredSpeed = 1;	//希望速さ(m/s)
 	R_ind = 0;			//誘導者の誘導半径(m)
-	R_vis = 1000;			//エージェントの視界半径(m)
+	R_vis = 1;			//エージェントの視界半径(m)
 
 	f_driv = Vector2d(0, 0);
 	f_ig = Vector2d(0, 0);
@@ -222,7 +222,6 @@ Vector2d Agent::drivingForce_g(const Room room)
 	const Vector2d target = Vector2d(room.getRoom_size_x() + radius, 0);	//目的地（出口）
 	Vector2d f_driv;
 
-	//desiredSpeed = 1;
 	desiredDirection = unitVector(position, target);
 	f_driv = (mass / reactionTime) * ((desiredSpeed * desiredDirection) - velocity);
 
@@ -300,7 +299,7 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 
 				double theta_i = atan2(guide[i].getVelocity().y, guide[i].getVelocity().x);
 				theta.emplace_back(theta_i);
-			}			
+			}
 		}
 
 		//自身の視界範囲内にいる避難者の情報を参照
@@ -347,9 +346,106 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 			desiredVelocity = desiredSpeed * desiredDirection;
 		}
 
+		//壁に沿って移動するとき
 		else
 		{
-			desiredDirection = O;
+			//個人的希望方向ベクトルが零ベクトルのとき、希望方向をランダムに初期化する
+			if (desiredDirection.x == 0 && desiredDirection.y == 0)
+			{
+				std::random_device seed_gen;
+				std::default_random_engine engine(seed_gen());
+
+				// 0以上1.0未満の値を等確率で発生させる
+				std::uniform_real_distribution<> dist(0, 1.0);
+
+				double theta = 2 * PI * dist(engine);
+				Vector2d randomDirection = Vector2d(cos(theta), sin(theta));
+
+				desiredDirection = unitVector(O, randomDirection);
+				desiredVelocity = desiredSpeed * desiredDirection;
+			}
+
+			else
+			{
+				const vector<vector<Vector2d>> wallCornerPoint = room.createWall();
+				const int N_wall = wallCornerPoint.size();		//壁の数(個)					
+
+				double d_iw = 0;								//自身と壁との距離(m)
+				static bool changeDirection = true;				//壁が2つ見えている時に1度だけ希望方向を変更するための判定用変数
+				vector<int> isVisibleWallNumber;				//視認できる壁の番号を格納する配列
+
+				for (int n = 0; n < N_wall; ++n)
+				{
+					Vector2d nearestPoint = getNearestPoint(wallCornerPoint[n][0], wallCornerPoint[n][1], position);
+					d_iw = distance(position, nearestPoint);
+
+					//自身の視界範囲内に壁が見えるとき
+					if (d_iw <= R_vis)
+					{
+						isVisibleWallNumber.push_back(n);
+					}
+				}
+
+				//見える壁がない時、個人的希望方向を上書きしない
+				if (isVisibleWallNumber.size() == 0)
+				{
+
+				}
+
+				//見える壁が１つの時、見える壁に沿って移動する
+				else if (isVisibleWallNumber.size() == 1)
+				{
+					Vector2d alongWallDirection = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
+
+					//個人的希望方向と壁に沿う単位ベクトルの内積を計算し、それまでの希望方向に沿った方向に進行する
+					if (dotProduct(desiredDirection, alongWallDirection) >= 0)
+					{
+						desiredDirection.x = alongWallDirection.x;
+						desiredDirection.y = alongWallDirection.y;
+					}
+					else
+					{
+						desiredDirection.x = -alongWallDirection.x;
+						desiredDirection.y = -alongWallDirection.y;
+					}
+
+					changeDirection = true;		//壁が2つ見えた時に希望方向を切り替えられるようにフラグをONにする
+				}
+
+				//見える壁が２つの時、沿う壁を変更する
+				else if (isVisibleWallNumber.size() == 2)
+				{
+					//個人的希望方向変更フラグがONの時
+					if (changeDirection == true)
+					{
+						Vector2d alongWallDirection1 = unitVector(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1]);
+						Vector2d alongWallDirection2 = unitVector(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1]);
+
+						//壁１が進行方向に存在するとき、壁２から遠ざかる
+						if (dotProduct(desiredDirection, alongWallDirection1) == 0)
+						{
+							Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[1]][0], wallCornerPoint[isVisibleWallNumber[1]][1], position);
+							Vector2d n_iw = unitVector(nearestPoint, position);
+
+							desiredDirection.x = n_iw.x;
+							desiredDirection.y = n_iw.y;
+						}
+						//壁２が進行方向に存在するとき、壁１から遠ざかる
+						else if (dotProduct(desiredDirection, alongWallDirection2) == 0)
+						{
+							Vector2d nearestPoint = getNearestPoint(wallCornerPoint[isVisibleWallNumber[0]][0], wallCornerPoint[isVisibleWallNumber[0]][1], position);
+							Vector2d n_iw = unitVector(nearestPoint, position);
+
+							desiredDirection.x = n_iw.x;
+							desiredDirection.y = n_iw.y;
+						}
+
+						isVisibleWallNumber.clear();		//見えている壁の記憶を破棄する
+						changeDirection = false;			//個人的希望方向変更フラグをOFFにする
+					}
+				}
+			}
+
 			desiredVelocity = desiredSpeed * desiredDirection;
 		}
 
@@ -358,37 +454,6 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 
 
 
-
-
-
-
-		//if (N_aroundAgent != 0)
-		//{
-		//	Vector2d centerOfGravity = totalPosition / N_aroundAgent;
-		//	double d_iG = distance(position, centerOfGravity);
-
-		//	double rho_f = exp(-d_iG / R_vis);
-		//	//double rho_f = 0.1;
-		//	Vector2d e_crowd = totalVelocity / N_aroundAgent;
-		//	Vector2d n_iG = unitVector(position, centerOfGravity);
-
-		//	desiredDirection = unitVector(O, rho_f * e_crowd + (1 - rho_f) * n_iG);
-		//	desiredVelocity = desiredSpeed * desiredDirection;
-		//}
-
-		
-
-
-
-
-
-
-
-		
-
-
-
-		
 
 
 
@@ -687,13 +752,14 @@ Vector2d Agent::drivingForce_e(Room room, const std::vector<Agent>& guide, const
 		//desiredVelocity = desiredSpeed * desiredDirection;
 		//f_driv = (mass / reactionTime) * (desiredVelocity - velocity);
 
-		//return f_driv;
+
+
+		
 	}
 
 	f_driv = (mass / reactionTime) * (desiredVelocity - velocity);
 
 	return f_driv;
-
 }
 
 Vector2d Agent::agentInteractForce(const std::vector<Agent>& agents)
