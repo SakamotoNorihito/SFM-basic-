@@ -16,7 +16,7 @@ const double room_size_y = 10;
 const double width_exit = 1;
 
 //ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“ğŒ
-const int N_sample = 3;             //ƒTƒ“ƒvƒ‹”
+const int N_sample = 1;             //ƒTƒ“ƒvƒ‹”
 const int N_guide = 1;              //‰Šú—U“±Ò”
 const int N_evacuee = 100;          //‰Šú”ğ“ïÒ”
 const double stepTime = 0.005;      //ŠÔ•i‰Šú’lF0.005[s]j
@@ -24,6 +24,7 @@ const double coeff_dataOutPut = 1;   //ƒf[ƒ^o—Í‚ÌŠÔ•‚ğŒˆ’è‚·‚éŒW”i1c1/1(
 const int N_step = 60200;           //ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“ƒXƒeƒbƒv”(300[s])
 //”ğ“ïŠÔ = ŠÔ• ~ ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“ƒXƒeƒbƒv”
 
+int countN_inR_ind(const vector<Agent>& guide, const vector<Agent>& evacuee);
 int countEscapeCompleteNumber(const int N_initial, vector<Agent>& agents);
 double calculateAverage(const vector<double>& data);
 double calculateStandardDeviation(const vector<double>& data);
@@ -101,7 +102,8 @@ int main()
                 << "—U“±Ò" << i + 1 << "‚Ìf_driv_x" << "," << "—U“±Ò" << i + 1 << "‚Ìf_driv_y" << ","
                 << "—U“±Ò" << i + 1 << "‚Ìf_ig_x" << "," << "—U“±Ò" << i + 1 << "‚Ìf_ig_y" << ","
                 << "—U“±Ò" << i + 1 << "‚Ìf_ij_x" << "," << "—U“±Ò" << i + 1 << "‚Ìf_ij_y" << ","
-                << "—U“±Ò" << i + 1 << "‚Ìf_iw_x" << "," << "—U“±Ò" << i + 1 << "‚Ìf_iw_y" << ",";
+                << "—U“±Ò" << i + 1 << "‚Ìf_iw_x" << "," << "—U“±Ò" << i + 1 << "‚Ìf_iw_y" << ","
+                << "—U“±Ò" << i + 1 << "‚ÌN_inR_ind" << ",";
 
             ofs << "—U“±Ò" << i + 1 << "‚ÌxÀ•W" << "," << "—U“±Ò" << i + 1 << "‚ÌyÀ•W" << ","
                 << "—U“±Ò" << i + 1 << "‚Ìe_x" << "," << "—U“±Ò" << i + 1 << "‚Ìe_y" << ","
@@ -111,7 +113,8 @@ int main()
                 << "—U“±Ò" << i + 1 << "‚Ìf_driv_x" << "," << "—U“±Ò" << i + 1 << "‚Ìf_driv_y" << ","
                 << "—U“±Ò" << i + 1 << "‚Ìf_ig_x" << "," << "—U“±Ò" << i + 1 << "‚Ìf_ig_y" << ","
                 << "—U“±Ò" << i + 1 << "‚Ìf_ij_x" << "," << "—U“±Ò" << i + 1 << "‚Ìf_ij_y" << ","
-                << "—U“±Ò" << i + 1 << "‚Ìf_iw_x" << "," << "—U“±Ò" << i + 1 << "‚Ìf_iw_y" << ",";
+                << "—U“±Ò" << i + 1 << "‚Ìf_iw_x" << "," << "—U“±Ò" << i + 1 << "‚Ìf_iw_y" << ","
+                << "—U“±Ò" << i + 1 << "‚ÌN_inR_ind" << ",";
         }
 
         for (int i = 0; i < N_evacuee; ++i)
@@ -197,7 +200,8 @@ int main()
                             << guide[i].getF_driv().x << "," << guide[i].getF_driv().y << ","
                             << guide[i].getF_ig().x << "," << guide[i].getF_ig().y << ","
                             << guide[i].getF_ij().x << "," << guide[i].getF_ij().y << ","
-                            << guide[i].getF_iw().x << "," << guide[i].getF_iw().y << ",";
+                            << guide[i].getF_iw().x << "," << guide[i].getF_iw().y << ","
+                            << countN_inR_ind(guide, evacuee) << ",";
 
                         ofs << guide[i].getPosition().x << "," << guide[i].getPosition().y << ","
                             << guide[i].getDesiredDirection().x << "," << guide[i].getDesiredDirection().y << ","
@@ -207,7 +211,8 @@ int main()
                             << guide[i].getF_driv().x << "," << guide[i].getF_driv().y << ","
                             << guide[i].getF_ig().x << "," << guide[i].getF_ig().y << ","
                             << guide[i].getF_ij().x << "," << guide[i].getF_ij().y << ","
-                            << guide[i].getF_iw().x << "," << guide[i].getF_iw().y << ",";
+                            << guide[i].getF_iw().x << "," << guide[i].getF_iw().y << ","
+                            << countN_inR_ind(guide, evacuee) << ",";
                     }
                 }
                 
@@ -226,7 +231,8 @@ int main()
                             << guide[i].getF_driv().x << "," << guide[i].getF_driv().y << ","
                             << guide[i].getF_ig().x << "," << guide[i].getF_ig().y << ","
                             << guide[i].getF_ij().x << "," << guide[i].getF_ij().y << ","
-                            << guide[i].getF_iw().x << "," << guide[i].getF_iw().y << ",";
+                            << guide[i].getF_iw().x << "," << guide[i].getF_iw().y << ","
+                            << countN_inR_ind(guide, evacuee) << ",";
 
                         ofs << guide[i].getPosition().x << "," << guide[i].getPosition().y << ","
                             << guide[i].getDesiredDirection().x << "," << guide[i].getDesiredDirection().y << ","
@@ -236,7 +242,8 @@ int main()
                             << guide[i].getF_driv().x << "," << guide[i].getF_driv().y << ","
                             << guide[i].getF_ig().x << "," << guide[i].getF_ig().y << ","
                             << guide[i].getF_ij().x << "," << guide[i].getF_ij().y << ","
-                            << guide[i].getF_iw().x << "," << guide[i].getF_iw().y << ",";
+                            << guide[i].getF_iw().x << "," << guide[i].getF_iw().y << ","
+                            << countN_inR_ind(guide, evacuee) << ",";
                     }
 
                     for (int i = 0; i < N_escapeCompleteGuide; ++i)
@@ -249,7 +256,8 @@ int main()
                             << "" << "," << "" << ","
                             << "" << "," << "" << ","
                             << "" << "," << "" << ","
-                            << "" << "," << "" << ",";
+                            << "" << "," << "" << ","
+                            << "" << ",";
 
                         ofs << "" << "," << "" << ","
                             << "" << "," << "" << ","
@@ -259,7 +267,8 @@ int main()
                             << "" << "," << "" << ","
                             << "" << "," << "" << ","
                             << "" << "," << "" << ","
-                            << "" << "," << "" << ",";
+                            << "" << "," << "" << ","
+                            << "" << ",";
                     }
                 }                
 
@@ -363,7 +372,32 @@ int main()
     return 0;
 }
 
-int countEscapeCompleteNumber(const int N_initialNumber, vector<Agent>& agents) 
+int countN_inR_ind(const vector<Agent>& guide, const vector<Agent>& evacuee)
+{
+    int N_inR_ind = 0;
+
+    int N_guide = guide.size();
+    int N_evacuee = evacuee.size();
+    double R_ind = guide[0].getR_ind();
+    double R_vis = evacuee[0].getR_vis();
+
+    for (int i = 0; i < N_guide; ++i)
+    {
+        for (int j = 0; j < N_evacuee; ++j)
+        {
+            double d_Li = distance(guide[i].getPosition(), evacuee[j].getPosition());
+
+            if (d_Li <= R_ind || d_Li <= R_vis)
+            {
+                N_inR_ind++;
+            }
+        }
+    }
+
+    return N_inR_ind;
+}
+
+int countEscapeCompleteNumber(const int N_initialNumber, vector<Agent>& agents)
 {
     int N_escapeCurrent = agents.size();
 

@@ -12,7 +12,7 @@ Agent::Agent()
 	mass = 80;			//エージェントの質量(kg)
 	radius = 0.25;		//エージェント半径(m)
 	desiredSpeed = 1;	//希望速さ(m/s)
-	R_ind = 1;			//誘導者の誘導半径(m)
+	R_ind = 5;			//誘導者の誘導半径(m)
 	R_vis = 1;			//エージェントの視界半径(m)
 
 	f_driv = Vector2d(0, 0);
