@@ -16,12 +16,12 @@ const double room_size_y = 10;
 const double width_exit = 1;
 
 //シミュレーション条件
-const int N_sample = 1;             //サンプル数
+const int N_sample = 3;             //サンプル数
 const int N_guide = 1;              //初期誘導者数
 const int N_evacuee = 100;          //初期避難者数
 const double stepTime = 0.005;      //時間幅（初期値：0.005[s]）
 const double coeff_dataOutPut = 1;   //データ出力の時間幅を決定する係数（1…1/1(= 1)秒、10…1/10(= 0.1)秒、100…1/100(= 0.01)秒）
-const int N_step = 20200;           //シミュレーションステップ数(100[s])
+const int N_step = 60200;           //シミュレーションステップ数(300[s])
 //避難時間 = 時間幅 × シミュレーションステップ数
 
 int countEscapeCompleteNumber(const int N_initial, vector<Agent>& agents);
@@ -44,10 +44,12 @@ int main()
 
     //int型にキャストすべき？
     vector<vector<int>> recordEscapeCompleteNumber(N_sample, vector<int>(N_step * stepTime));
+    vector<double> recordGuideEscapeTime(N_sample);
     vector<double> recordLastEvacueeEscapeTime(N_sample);    
 
     for (int N = 0; N < N_sample; ++N) 
     {
+        bool recordGuideEscapeTimeFlag = true;      //最後の誘導者が避難完了した時間を記録するためのフラグ
         bool recordLastEvacueeEscapeTimeFlag = true;     //最後の避難者が避難完了した時間を記録するためのフラグ
 
         //各サンプル毎にデータを出力
@@ -164,6 +166,13 @@ int main()
                 int N_escapeCompleteEvacuee = countEscapeCompleteNumber(N_evacuee, evacuee);
                 //避難完了者数の記録（添え字１…サンプル数、添え字２…秒数）
                 recordEscapeCompleteNumber[N][n * stepTime] = N_escapeCompleteEvacuee;
+
+                //誘導者が部屋を脱出した時刻を記録
+                if (recordGuideEscapeTimeFlag == true && guide.size() == 0)
+                {
+                    recordGuideEscapeTime[N] = n * stepTime;
+                    recordGuideEscapeTimeFlag = false;
+                }
 
                 //最後の避難者が避難完了した時間を記録
                 if (recordLastEvacueeEscapeTimeFlag == true && N_escapeCompleteEvacuee == N_evacuee)
@@ -282,6 +291,12 @@ int main()
             }
         }
 
+        //シミュレーションが終了しても誘導者が避難完了できなかった場合、その時点での時間を記録する
+        if (recordGuideEscapeTimeFlag == true)
+        {
+            recordGuideEscapeTime[N] = N_step * stepTime - 1.0;
+        }
+
         //シミュレーションが終了しても全避難者が避難完了できなかった場合、その時点での時間を記録する
         if (recordLastEvacueeEscapeTimeFlag == true)
         {
@@ -304,6 +319,8 @@ int main()
     vector<double> ave = calculateAverage(recordEscapeCompleteNumber);
     vector<double> sd = calculateStandardDeviation(recordEscapeCompleteNumber);
 
+    double ave_guide_time = calculateAverage(recordGuideEscapeTime);
+    double sd_guide_time = calculateStandardDeviation(recordGuideEscapeTime);
     double ave_time = calculateAverage(recordLastEvacueeEscapeTime);
     double sd_time = calculateStandardDeviation(recordLastEvacueeEscapeTime);
 
@@ -326,6 +343,16 @@ int main()
     {
         cout << recordLastEvacueeEscapeTime[i] << "\n";
         ofs << recordLastEvacueeEscapeTime[i] << "\n";
+    }
+
+    cout << "\n" << "誘導者の平均避難時間" << "," << "誘導者の標準偏差" << "\n" << ave_guide_time << "," << sd_guide_time << "\n";
+    ofs << "\n" << "誘導者の平均避難時間" << "," << "誘導者の標準偏差" << "\n" << ave_guide_time << "," << sd_guide_time << "\n";
+
+    for (int i = 0; i < recordGuideEscapeTime.size(); ++i)
+    {
+        cout << recordGuideEscapeTime[i] << "\n";
+        ofs << recordGuideEscapeTime[i] << "\n";
+
     }
 
     ofs.close();

@@ -7,7 +7,7 @@
 #include "Room.h"
 
 class Agent : public Vector2d {
-private:
+private:	
 	double mass;
 	double radius;
 	double desiredSpeed;
@@ -23,7 +23,7 @@ private:
 	Vector2d velocity;
 	Vector2d desiredDirection;
 	Vector2d desiredVelocity;
-
+	
 	//Šó–]‘¬‚³‚ğŒvZ‚·‚éŠÖ”
 	double calculateDesiredSpeed(const std::vector<Agent>& guide, const std::vector<Agent>& evacuee);
 	//oŒû‚ªŒ©‚¦‚é‚©”»’è‚·‚éŠÖ”
@@ -60,7 +60,8 @@ public:
 	Vector2d getPosition() const { return position; }
 	Vector2d getVelocity() const { return velocity; }
 	Vector2d getDesiredDirection() const { return desiredDirection; }	
-	Vector2d getDesiredVelocity() const { return desiredVelocity; }
+	Vector2d getDesiredVelocity() const { return desiredVelocity; }	
+
 	
 	//guide—pmoveŠÖ”
 	void move_g(std::vector<Agent>& guide, const std::vector<Agent>& evacuee, const Room room, const double stepTime);
