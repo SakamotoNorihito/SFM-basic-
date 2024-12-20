@@ -73,20 +73,21 @@ int main()
 
         double R_ind = guide[0].getR_ind();
         double R_vis = evacuee[0].getR_vis();
+        double R_exitSign = evacuee[0].getR_exitSign();
         double radius = evacuee[0].getRadius();
 
         cout << "•”‰®‚ÌƒTƒCƒYFx" << "," << "•”‰®‚ÌƒTƒCƒYFy" << "," << "oŒû•Fw" << ","
-            << "ƒG[ƒWƒFƒ“ƒg”¼Œa" << "," << "—U“±”¼Œa" << "," << "Ž‹ŠE”¼Œa" << ","
+            << "ƒG[ƒWƒFƒ“ƒg”¼Œa" << "," << "—U“±”¼Œa" << "," << "Ž‹ŠE”¼Œa" << "," << "”ð“ïŒû—U“±“”‚Ì‰¹º”¼Œa" << ","
             << "—U“±ŽÒ”" << "," << "”ð“ïŽÒ”" << "\n"
             << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << ","
-            << radius << "," << R_ind << "," << R_vis << ","
+            << radius << "," << R_ind << "," << R_vis << "," << R_exitSign << ","
             << N_guide << "," << N_evacuee << "\n";
 
         ofs << "•”‰®‚ÌƒTƒCƒYFx" << "," << "•”‰®‚ÌƒTƒCƒYFy" << "," << "oŒû•Fw" << ","
-            << "ƒG[ƒWƒFƒ“ƒg”¼Œa" << "," << "—U“±”¼Œa" << "," << "Ž‹ŠE”¼Œa" << ","
+            << "ƒG[ƒWƒFƒ“ƒg”¼Œa" << "," << "—U“±”¼Œa" << "," << "Ž‹ŠE”¼Œa" << "," << "”ð“ïŒû—U“±“”‚Ì‰¹º”¼Œa" << ","
             << "—U“±ŽÒ”" << "," << "”ð“ïŽÒ”" << "\n"
             << room.getRoom_size_x() << "," << room.getRoom_size_y() << "," << room.getWidth_exit() << ","
-            << radius << "," << R_ind << "," << R_vis << ","
+            << radius << "," << R_ind << "," << R_vis << "," << R_exitSign << ","
             << N_guide << "," << N_evacuee << "\n";
 
         cout << "ŽžŠÔ" << "," << "”ð“ïŠ®—¹l”" << ",";

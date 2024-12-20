@@ -13,6 +13,7 @@ private:
 	double desiredSpeed;
 	double R_ind;
 	double R_vis;
+	double R_exitSign;
 
 	Vector2d f_driv;
 	Vector2d f_ig;
@@ -53,6 +54,7 @@ public:
 	double getDesiredSpeed() const { return desiredSpeed; }
 	double getR_ind() const { return R_ind; }
 	double getR_vis() const { return R_vis; }
+	double getR_exitSign() const { return R_exitSign; }
 	Vector2d getF_driv() const { return f_driv; }
 	Vector2d getF_ig() const { return f_ig; }
 	Vector2d getF_ij() const { return f_ij; }

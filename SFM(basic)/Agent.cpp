@@ -12,8 +12,9 @@ Agent::Agent()
 	mass = 80;			//エージェントの質量(kg)
 	radius = 0.25;		//エージェント半径(m)
 	desiredSpeed = 1;	//希望速さ(m/s)
-	R_ind = 5;			//誘導者の誘導半径(m)
+	R_ind = 1;			//誘導者の誘導半径(m)
 	R_vis = 1;			//エージェントの視界半径(m)
+	R_exitSign = 0;		//避難口誘導灯の音声半径(m)
 
 	f_driv = Vector2d(0, 0);
 	f_ig = Vector2d(0, 0);
@@ -846,9 +847,77 @@ void setInitialPosition_g(const Room room, std::vector<Agent>& guide)
 	//const Vector2d p9 = Vector2d(3 * room_size_x / 4, -room_size_y / 4);
 	const Vector2d outOfRoom = Vector2d(1000000, 0);
 
-	//Yang(2014)再現用初期位置
-	//const Vector2d p_Yang_2014_1 = Vector2d(3, (-room_size_y / 2) + 3);
-	//const Vector2d p_Yang_2014_2 = Vector2d(12, (-room_size_y / 2) + 12);
+	//カラーマップ作成用初期位置（初期位置を細かく分割している）
+	const double x1 = 0.5;
+	const double x2 = 1.5;
+	const double x3 = 2.5;
+	const double x4 = 3.5;
+	const double x5 = 4.5;
+	const double x6 = 5.5;
+	const double x7 = 6.5;
+	const double x8 = 7.5;
+	const double x9 = 8.5;
+	const double x10 = 9.5;
+	const double y1 = 4.5;
+	const double y2 = 3.5;
+	const double y3 = 2.5;
+	const double y4 = 1.5;
+	const double y5 = 0.5;	
+
+	const Vector2d p_mesh1 = Vector2d(x1, y1);
+	const Vector2d p_mesh2 = Vector2d(x2, y1);
+	const Vector2d p_mesh3 = Vector2d(x3, y1);
+	const Vector2d p_mesh4 = Vector2d(x4, y1);
+	const Vector2d p_mesh5 = Vector2d(x5, y1);
+	const Vector2d p_mesh6 = Vector2d(x6, y1);
+	const Vector2d p_mesh7 = Vector2d(x7, y1);
+	const Vector2d p_mesh8 = Vector2d(x8, y1);
+	const Vector2d p_mesh9 = Vector2d(x9, y1);
+	const Vector2d p_mesh10 = Vector2d(x10, y1);
+
+	const Vector2d p_mesh11 = Vector2d(x1, y2);
+	const Vector2d p_mesh12 = Vector2d(x2, y2);
+	const Vector2d p_mesh13 = Vector2d(x3, y2);
+	const Vector2d p_mesh14 = Vector2d(x4, y2);
+	const Vector2d p_mesh15 = Vector2d(x5, y2);
+	const Vector2d p_mesh16 = Vector2d(x6, y2);
+	const Vector2d p_mesh17 = Vector2d(x7, y2);
+	const Vector2d p_mesh18 = Vector2d(x8, y2);
+	const Vector2d p_mesh19 = Vector2d(x9, y2);
+	const Vector2d p_mesh20 = Vector2d(x10, y2);
+
+	const Vector2d p_mesh21 = Vector2d(x1, y3);
+	const Vector2d p_mesh22 = Vector2d(x2, y3);
+	const Vector2d p_mesh23 = Vector2d(x3, y3);
+	const Vector2d p_mesh24 = Vector2d(x4, y3);
+	const Vector2d p_mesh25 = Vector2d(x5, y3);
+	const Vector2d p_mesh26 = Vector2d(x6, y3);
+	const Vector2d p_mesh27 = Vector2d(x7, y3);
+	const Vector2d p_mesh28 = Vector2d(x8, y3);
+	const Vector2d p_mesh29 = Vector2d(x9, y3);
+	const Vector2d p_mesh30 = Vector2d(x10, y3);
+
+	const Vector2d p_mesh31 = Vector2d(x1, y4);
+	const Vector2d p_mesh32 = Vector2d(x2, y4);
+	const Vector2d p_mesh33 = Vector2d(x3, y4);
+	const Vector2d p_mesh34 = Vector2d(x4, y4);
+	const Vector2d p_mesh35 = Vector2d(x5, y4);
+	const Vector2d p_mesh36 = Vector2d(x6, y4);
+	const Vector2d p_mesh37 = Vector2d(x7, y4);
+	const Vector2d p_mesh38 = Vector2d(x8, y4);
+	const Vector2d p_mesh39 = Vector2d(x9, y4);
+	const Vector2d p_mesh40 = Vector2d(x10, y4);
+
+	const Vector2d p_mesh41 = Vector2d(x1, y5);
+	const Vector2d p_mesh42 = Vector2d(x2, y5);
+	const Vector2d p_mesh43 = Vector2d(x3, y5);
+	const Vector2d p_mesh44 = Vector2d(x4, y5);
+	const Vector2d p_mesh45 = Vector2d(x5, y5);
+	const Vector2d p_mesh46 = Vector2d(x6, y5);
+	const Vector2d p_mesh47 = Vector2d(x7, y5);
+	const Vector2d p_mesh48 = Vector2d(x8, y5);
+	const Vector2d p_mesh49 = Vector2d(x9, y5);
+	const Vector2d p_mesh50 = Vector2d(x10, y5);
 
 	for (int i = 0; i < N_guide; ++i)
 	{
@@ -857,7 +926,7 @@ void setInitialPosition_g(const Room room, std::vector<Agent>& guide)
 		switch (i)	//誘導者毎初期配置を指定する
 		{
 		case 0:
-			guide[i].setPosition(p_deepCenter);	//部屋の左壁中央
+			guide[i].setPosition(p_mesh5);	//部屋の左壁中央
 			break;
 		case 1:
 			guide[i].setPosition(outOfRoom);
@@ -893,9 +962,13 @@ void setInitialPosition_e(const Room room, const std::vector<Agent>& guide, std:
 	{
 		double r_i = evacuee[i].getRadius();
 
-		// r_i 以上 room_size_x - r_i 未満の実数を一様乱数で発生させる
+		// r_i 以上 room_size_x - r_i 未満の実数を一様乱数で発生させる（部屋全体に避難者をランダム配置）
 		std::uniform_real_distribution<> dist_x(r_i, room_size_x - r_i);
-		// (-room_size_y / 2) + r_i 以上 (room_size_y / 2) - r_i 未満の実数を一様乱数で発生させる
+
+		// r_i 以上 (room_size_x / 2) - r_i 未満の実数を一様乱数で発生させる（部屋の左半分の領域に避難者をランダム配置）
+		//std::uniform_real_distribution<> dist_x(r_i, (room_size_x / 2) - r_i);
+
+		// (-room_size_y / 2) + r_i 以上 (room_size_y / 2) - r_i 未満の実数を一様乱数で発生させる（部屋全体に避難者をランダム配置）
 		std::uniform_real_distribution<> dist_y((-room_size_y / 2) + r_i, (room_size_y / 2) - r_i);
 
 		evacuee[i].setPosition(Vector2d(dist_x(engine), dist_y(engine)));
